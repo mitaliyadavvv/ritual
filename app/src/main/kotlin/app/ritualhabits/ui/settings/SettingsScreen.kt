@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.foundation.layout.offset
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.selection.toggleable
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -57,15 +58,16 @@ fun SettingsScreen(
     val haptics = Ritual.haptics
     ScreenColumn(bottomInset = WindowInsets.navigationBars.asPaddingValues()) {
         Row(verticalAlignment = Alignment.CenterVertically) {
-            RitualIconButton(RitualIcons.Back, contentDescription = "Back", onClick = onBack, outlined = false, modifier = Modifier.offset(x = -Spacing.md))
+            RitualIconButton(RitualIcons.Back, contentDescription = "Back", onClick = onBack, modifier = Modifier.offset(x = -Spacing.xs))
         }
+        Spacer(Modifier.height(Spacing.md))
         Text(
             "Settings",
             style = RitualType.title,
             color = Ritual.colors.textPrimary,
             modifier = Modifier.semantics { heading() },
         )
-        Spacer(Modifier.height(Spacing.xxl))
+        Spacer(Modifier.height(Spacing.xl))
 
         SectionLabel("Appearance")
         SegmentedChoice(
@@ -77,8 +79,9 @@ fun SettingsScreen(
         Spacer(Modifier.height(Spacing.sm))
         Text(
             "System follows your device's light or dark setting.",
-            style = RitualType.caption,
+            style = RitualType.bodySmall,
             color = Ritual.colors.textSecondary,
+            modifier = Modifier.padding(start = Spacing.lg),
         )
 
         Spacer(Modifier.height(Spacing.xxl))

@@ -41,6 +41,7 @@ import app.ritualhabits.ui.components.RitualIconButton
 import app.ritualhabits.ui.components.RitualIcons
 import app.ritualhabits.ui.components.ScreenColumn
 import app.ritualhabits.ui.components.ScreenHeader
+import app.ritualhabits.ui.focus.FocusPlaceholder
 import app.ritualhabits.ui.manage.ManageRoute
 import app.ritualhabits.ui.settings.SettingsRoute
 import app.ritualhabits.ui.theme.Ritual
@@ -93,14 +94,11 @@ fun RitualAppRoot(navController: NavHostController = rememberNavController()) {
             composable(TopLevelDestination.PROGRESS.route) {
                 TabPlaceholder(
                     TopLevelDestination.PROGRESS, tabBottomInset, { navController.navigate(Routes.SETTINGS) },
-                    title = "Your progress", body = "Streaks, completion rates and history will appear here.",
+                    title = "Your progress", body = "Streaks, completion rates and history will appear here in a later update.",
                 )
             }
             composable(TopLevelDestination.FOCUS.route) {
-                TabPlaceholder(
-                    TopLevelDestination.FOCUS, tabBottomInset, { navController.navigate(Routes.SETTINGS) },
-                    title = "Focus sessions", body = "Timed sessions for a habit will appear here.",
-                )
+                FocusPlaceholder(tabBottomInset, onOpenSettings = { navController.navigate(Routes.SETTINGS) })
             }
             composable(TopLevelDestination.MANAGE.route) {
                 ManageRoute(tabBottomInset, onOpenSettings = { navController.navigate(Routes.SETTINGS) })

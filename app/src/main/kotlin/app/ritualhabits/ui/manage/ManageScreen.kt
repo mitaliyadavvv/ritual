@@ -232,9 +232,9 @@ private fun ReadyContent(state: ManageUiState.Ready, tab: ManageTab, reordering:
         } else {
             Text(
                 "Not shown on Today. History is kept.",
-                style = RitualType.caption,
+                style = RitualType.bodySmall,
                 color = Ritual.colors.textSecondary,
-                modifier = Modifier.padding(bottom = Spacing.sm),
+                modifier = Modifier.padding(start = Spacing.lg, bottom = Spacing.sm),
             )
             HabitModule(state.archived) { habit, _ ->
                 HabitRow(
@@ -258,9 +258,9 @@ private fun ActiveList(active: List<ManagedHabit>, reordering: Boolean, actions:
     Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
         Text(
             if (reordering) "Use the arrows to set the order on Today." else "Shown on Today in this order.",
-            style = RitualType.caption,
+            style = RitualType.bodySmall,
             color = Ritual.colors.textSecondary,
-            modifier = Modifier.weight(1f),
+            modifier = Modifier.weight(1f).padding(start = Spacing.lg),
         )
         if (active.size > 1) {
             TextButton(
@@ -344,13 +344,13 @@ private fun HabitRow(
         verticalAlignment = Alignment.CenterVertically,
     ) {
         Column(Modifier.weight(1f).padding(end = Spacing.sm)) {
-            Text(habit.name, style = RitualType.body, color = if (muted) c.textSecondary else c.textPrimary)
+            Text(habit.name, style = RitualType.rowTitle, color = if (muted) c.textSecondary else c.textPrimary)
             if (habit.description != null) {
                 Spacer(Modifier.height(Spacing.xxs))
                 Text(habit.description, style = RitualType.bodySmall, color = c.textSecondary, maxLines = 2)
             }
             Spacer(Modifier.height(Spacing.xxs))
-            Text(meta, style = RitualType.caption, color = c.textSecondary)
+            Text(meta, style = RitualType.caption.copy(fontFeatureSettings = null), color = c.textSecondary)
         }
         Box {
             RitualIconButton(
@@ -380,7 +380,7 @@ private fun ReorderRow(
             .padding(vertical = Spacing.xs),
         verticalAlignment = Alignment.CenterVertically,
     ) {
-        Text(habit.name, style = RitualType.body, color = c.textPrimary, modifier = Modifier.weight(1f))
+        Text(habit.name, style = RitualType.rowTitle, color = c.textPrimary, modifier = Modifier.weight(1f))
         ArrowSlot(canMoveUp) {
             RitualIconButton(RitualIcons.ArrowUp, contentDescription = "Move ${habit.name} up", onClick = onMoveUp)
         }

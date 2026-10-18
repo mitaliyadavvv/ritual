@@ -1,77 +1,99 @@
-# Ritual — Design System (Stage 5a: editorial redesign)
+# Ritual — Design System (Stage 5b: Apple-inspired, monochrome)
 
-Direction: **editorial, graphic, playful — strictly monochrome.** Minimal in clutter, not in personality.
+Principle: **quiet sophistication — every detail earns its place.** Calm, premium and tactile, as a
+native Android interpretation of Apple's craft, not a copy of iOS. Strictly monochrome.
 Source of truth: `app/src/main/kotlin/app/ritualhabits/ui/theme/` and `ui/components/`.
-Access tokens in composables through `Ritual.colors`, `Ritual.motion`, `Ritual.haptics`, `Ritual.layout`.
+Access tokens through `Ritual.colors`, `Ritual.motion`, `Ritual.haptics`, `Ritual.layout`.
 
-Status: tokens and shared components are redesigned; **Today is the reference screen**. Manage and
-Settings inherit the new tokens but their layouts are redesigned in the next stage.
+This replaces the Stage 5a editorial direction.
 
-## Typeface
-**Outfit**, bundled as one variable font: `res/font/outfit_variable.ttf` (Google Fonts, SIL OFL 1.1).
-The licence ships in the APK at `assets/licenses/Outfit-OFL.txt`, with source and checksum in
-`assets/licenses/README.txt`. There are no runtime font downloads. Weights are instances of the
-`wght` axis; **nothing below Regular (400)** is used. Numerals use tabular figures (`tnum`).
+## Colour
+Every token is a neutral grey (R = G = B). Contrast is tested in `DesignSystemTest`. The two
+themes are designed separately:
+
+| Token | Light | Dark | Role |
+|---|---|---|---|
+| background | #F4F4F4 | #000000 | page |
+| surface | #FFFFFF | #1B1B1B | grouped lists, summary card, fields |
+| surfaceRaised | #FFFFFF | #363636 | segmented thumb |
+| fill | #E9E9E9 | #2B2B2B | tonal buttons, tracks, selected-tab pill |
+| glass | white 92 % | #1E1E1E 92 % | floating tab bar only |
+| glassEdge | white | white 18 % | top-edge highlight on glass |
+| textPrimary | #111111 | #F4F4F4 | ≥ 7:1 everywhere |
+| textSecondary | #636363 | #A3A3A3 | ≥ 4.5:1 on every surface and on glass over worst-case content |
+| textTertiary | #A3A3A3 | #6A6A6A | decorative only |
+| border / borderStrong | #E3E3E3 / #C2C2C2 | #2E2E2E / #555555 | separators / pending rings |
+| accent / onAccent | ink / white | near-white / black | filled controls, completion marks |
+
+Hierarchy comes from tone (white cards on a grey page; charcoal on black), weight and spacing.
+There are no colour accents, coloured states or gradients. The only gradient is the glass edge
+highlight fading out.
+
+## Typography: Outfit
+Bundled as `res/font/outfit_variable.ttf` (variable `wght`, SIL OFL 1.1). The licence and source are
+in `assets/licenses/`. There are no runtime downloads. Regular is the lightest weight in use.
+Outfit's extra cap padding is trimmed (`LineHeightStyle.Trim.Both`), so text aligns optically
+with icons.
 
 | Style | Size / weight | Use |
 |---|---|---|
-| hero | 152 Black, −5 % tracking | today's count (fits to space) |
-| numeral | 72 ExtraBold | streak length, outlined totals |
-| display | 88 SemiBold | focus countdown |
-| title | 44 Bold, −3.5 % | screen titles, statements ("Day complete.") |
-| heading | 24 SemiBold | sheet titles |
-| value | 32 Bold | analytics values |
-| rowTitle | 20 Medium | habit names |
-| body / bodySmall | 18 / 15 Regular | copy |
+| display | 64 Medium, tabular | focus countdown |
+| title | 30 SemiBold | screen titles |
+| numeral | 28 SemiBold, tabular | large counts |
+| heading | 20 SemiBold | section titles, summary headline, empty-state titles |
+| value | 17 SemiBold, tabular | ring count, sheet titles |
+| rowTitle | 17 Regular | habit names, list rows |
+| body / bodySmall | 16 / 15 Regular | copy / descriptions |
 | label | 16 SemiBold | buttons |
-| overline | 12 SemiBold, +14 % tracking, uppercase | dates, section markers ("01 HABITS") |
-| caption | 13 Regular | tab labels, week-strip letters |
+| overline | 14 Medium | eyebrow date, small group labels, segmented labels |
+| caption | 13 Regular | metadata, tab labels, week letters |
 
-**Accessibility:** all text is in `sp` and follows the system font size, with **no caps**. Only
-decorative numerals (`FitText`) shrink to fit their space, never below a readable minimum. Layouts
-adapt instead of clipping: the statement and streak stack, the row index column widens, and the
-bottom bar shows only the selected label when labels no longer fit (every tab keeps its name for TalkBack).
+Everything is in `sp` and follows the system font size with no caps. The only text that shrinks to
+fit is the decorative count inside the progress ring, which is duplicated in the section header and
+the ring's accessibility label. Layouts reflow at large sizes; the tab bar shows only the selected
+label when labels no longer fit, and every tab keeps its accessible name.
 
-## Colour
-Strictly neutral (R = G = B), enforced with contrast in `DesignSystemTest`.
+## Space, shape, size
+- Spacing: 2 · 4 · 8 · 12 · 16 · 24 · 32 · 48 dp.
+- Screen gutters: 16 dp (< 360 dp), 20 dp (phones), 32 / 40 dp on larger screens, with content centred
+  at 600 / 680 dp.
+- Radii: 10 (thumbs) · 14 (menus, segmented track, snackbars) · 22 (grouped surfaces) · 30 (sheets,
+  dialogs, tab bar). Buttons are capsules.
+- Touch targets ≥ 48 dp. Habit rows ≥ 60 dp. Primary buttons are 52 dp tall. Icon buttons have a 40 dp
+  tonal disc in a 48 dp target.
+- Borders are avoided. Separators are hairlines inset to align with row text.
 
-| Token | Light | Dark | Use |
-|---|---|---|---|
-| background | #F3F3F3 | #0B0B0B | paper |
-| surface / surfaceRaised | #FFFFFF / #E6E6E6 | #161616 / #242424 | sheets, tracks |
-| textPrimary (ink) | #0A0A0A | #F3F3F3 | type, rules, marks |
-| textSecondary | #575757 | #A8A8A8 | supporting text (≥ 4.5:1) |
-| accent / onAccent | ink / paper | paper / ink | inverted blocks, filled controls |
-| onAccentSecondary | #A8A8A8 | #575757 | secondary text on inverted blocks (≥ 4.5:1) |
+## Materials: restrained "liquid glass"
+Glass is used **only** for the floating tab bar (`Modifier.glassSurface`):
+- 92 % opaque neutral fill. Content scrolling beneath reads as a soft tonal shift. Labels on the bar
+  are tested at ≥ 4.5:1 even over pure black (light) or pure white (dark) content behind them.
+- A delicate edge: a white top highlight fading out by mid-height, plus a faint lower hairline.
+- A very soft, wide shadow in light mode. No shadow in dark mode, where the edge highlight does the work.
+- **No backdrop blur.** Compose has no supported API for blurring content *behind* a surface without a
+  third-party library (e.g. Haze), and the material must look right without blur anyway. It renders
+  identically on every Android version, with no extra GPU passes.
 
-Intensity comes from **inversion** (solid ink slabs on paper), scale and weight, never from colour.
-
-## Composition
-- One dominant element per screen (Today: the count).
-- Heavy 2 dp rules open sections. Hairlines separate rows. Lists are indexes, not cards.
-- Numbered section markers ("01 HABITS") and index numbers (hidden from TalkBack).
-- Asymmetry and bleed: the streak slab runs off the right edge of the screen.
-- Gutters follow `LayoutMetrics` (20 / 32 / 40 dp). Content is centred with a max width on tablets.
-
-## Graphic progress
-- **SegmentedProgress**: one block per habit, outlined when pending and filled when done. When all are
-  done the gaps close into one solid slab.
-- **Week strip** (inside the streak slab): the last 7 days. Filled = complete, outlined = missed,
-  outlined with dot = today pending, dash = nothing was due. Built from `StreakCalculator.days`.
-- **CompletionCheck**: a 40 dp heavy ring that fills, draws its tick and lands with a small overshoot.
-
-## Shape and size
-Radii 10 · 16 · 24 · 32 dp, plus full pills for buttons and segmented controls. Touch targets are
-≥ 48 dp. Habit rows are ≥ 80 dp. Primary buttons are 56 dp pills. Outlines are 2 dp.
+All other surfaces are opaque.
 
 ## Motion
-quick 120 ms · standard 220 ms · emphasized 320 ms · **playful** spring (damping 0.55), at most one
-playful motion per interaction (stamp, count roll, segment fill). Every spec snaps when the system
-"Remove animations" setting is on.
+| Spec | Value | Use |
+|---|---|---|
+| quick | 140 ms | colour and fill changes, press feedback |
+| standard | 240 ms | content changes, tab cross-fade |
+| emphasized | 320 ms | pushed screens |
+| settle | spring, damping 0.82 | completion check, progress ring, sliding thumb, tab pill (no visible bounce) |
+| emphasis | spring, damping 0.62 | only the habit that completes the day |
+
+Press feedback is a 0.96 scale. Nothing blocks taps or shifts layout. When the system
+"Remove animations" setting is on, every spec snaps (verified on the emulator).
 
 ## Haptics
-Unchanged: semantic events (Selection, ToggleOn/Off, Confirm, Reject), gated by Ritual's preference.
+Semantic events (Selection, ToggleOn/Off, Confirm, Reject) are fired from ViewModel events after
+the database confirms a change, never from recomposition. They are gated by Ritual's preference.
 
-## Navigation
-A floating **inverted bar** (ink on light, paper on dark). The selected tab is a block of the page
-colour. Its height grows with font size, and screens reserve its measured height.
+## Components (`ui/components`)
+`ScreenColumn`, `ScreenHeader` (large title + eyebrow), `SectionHeader`, `SectionLabel`, `Module`
+(grouped surface), `Hairline` (inset), `ListRow`, `EmptyState`, `PrimaryButton`, `SecondaryButton`
+(tonal), `RitualIconButton` (tonal disc), `RitualSwitch`, `SegmentedChoice` (sliding thumb),
+`RitualBottomBar` (glass), `CompletionCheck`, `ProgressRing`, `WeekDots`, `TimerDial`,
+`ConfirmDialog`, `RitualMenu`, `RitualSnackbarHost`, `DelayedLoadingIndicator`, `glassSurface`.

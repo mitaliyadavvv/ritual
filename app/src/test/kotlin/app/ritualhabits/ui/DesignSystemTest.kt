@@ -15,9 +15,10 @@ import app.ritualhabits.ui.theme.isDark
 import app.ritualhabits.ui.today.TodayHabit
 import app.ritualhabits.ui.today.TodayUiState
 import app.ritualhabits.ui.today.formatHabitDay
-import app.ritualhabits.ui.today.todayRuleLine
-import app.ritualhabits.ui.today.todayStatement
+import app.ritualhabits.ui.today.todaySubtitle
+import app.ritualhabits.ui.today.todayTitle
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.compositeOver
 import androidx.compose.ui.graphics.luminance
 import kotlinx.datetime.LocalDate
 import org.junit.Test
@@ -43,12 +44,22 @@ class DesignSystemTest {
 
     @Test fun `text meets WCAG contrast on every background`() {
         for (p in listOf(LightColors, DarkColors)) {
-            for (bg in listOf(p.background, p.surface, p.surfaceRaised)) {
+            for (bg in listOf(p.background, p.surface, p.surfaceRaised, p.fill)) {
                 assertTrue(contrast(p.textPrimary, bg) >= 7.0, "primary on $bg")
                 assertTrue(contrast(p.textSecondary, bg) >= 4.5, "secondary ${contrast(p.textSecondary, bg)} on $bg")
             }
             assertTrue(contrast(p.onAccent, p.accent) >= 7.0)
             assertTrue(contrast(p.onAccentSecondary, p.accent) >= 4.5, "inverted secondary ${contrast(p.onAccentSecondary, p.accent)}")
+        }
+    }
+
+    @Test fun `tab labels on glass stay readable over worst-case content`() {
+        // Glass over the most contrasting content possible: black text behind light glass, white behind dark.
+        for (p in listOf(LightColors, DarkColors)) {
+            val behind = if (p.isDark) Color.White else Color.Black
+            val effective = p.glass.compositeOver(behind)
+            assertTrue(contrast(p.textPrimary, effective) >= 7.0, "primary on glass ${contrast(p.textPrimary, effective)}")
+            assertTrue(contrast(p.textSecondary, effective) >= 4.5, "secondary on glass ${contrast(p.textSecondary, effective)}")
         }
     }
 
@@ -70,6 +81,7 @@ class DesignSystemTest {
     }
 
     @Test fun `layout breakpoints`() {
+        assertEquals(16.dp, LayoutMetrics.forWidth(340.dp).gutter)
         assertEquals(20.dp, LayoutMetrics.forWidth(411.dp).gutter)
         assertEquals(411.dp, LayoutMetrics.forWidth(411.dp).contentMaxWidth)
         assertEquals(600.dp, LayoutMetrics.forWidth(700.dp).contentMaxWidth)
@@ -84,21 +96,21 @@ class DesignSystemTest {
         assertEquals(listOf("Today", "Progress", "Focus", "Manage"), TopLevelDestination.entries.map { it.label })
     }
 
-    @Test fun `today statement copy follows the state`() {
+    @Test fun `today summary copy follows the state`() {
         fun ready(done: Int, total: Int, streak: Int = 0) = TodayUiState.Ready(
             date = LocalDate(2026, 10, 18),
             habits = List(total) { TodayHabit("h$it", "Habit $it", null, completed = it < done) },
             hasActiveHabits = true,
             currentStreak = streak,
         )
-        assertEquals("Let's begin.", todayStatement(ready(0, 3)))
-        assertEquals("Keep it going.", todayStatement(ready(0, 3, streak = 4)))
-        assertEquals("One to go.", todayStatement(ready(2, 3)))
-        assertEquals("Two to go.", todayStatement(ready(1, 3)))
-        assertEquals("12 to go.", todayStatement(ready(1, 13)))
-        assertEquals("Day complete.", todayStatement(ready(3, 3)))
-        assertEquals("Finish all 3 and today counts.", todayRuleLine(ready(1, 3)))
-        assertEquals("Today counts toward your streak.", todayRuleLine(ready(3, 3)))
+        assertEquals("3 habits today", todayTitle(ready(0, 3)))
+        assertEquals("1 habit today", todayTitle(ready(0, 1)))
+        assertEquals("2 left today", todayTitle(ready(1, 3)))
+        assertEquals("All done for today", todayTitle(ready(3, 3)))
+        assertEquals("Finish all to start a streak", todaySubtitle(ready(1, 3)))
+        assertEquals("4-day streak · finish all to continue", todaySubtitle(ready(1, 3, streak = 4)))
+        assertEquals("5-day streak", todaySubtitle(ready(3, 3, streak = 5)))
+        assertEquals("Today counts toward your streak", todaySubtitle(ready(3, 3, streak = 0)))
     }
 
     @Test fun `habit day header format`() {
@@ -106,7 +118,7 @@ class DesignSystemTest {
     }
 
     private fun RitualColors.all() =
-        listOf(background, surface, surfaceRaised, glass, textPrimary, textSecondary, textTertiary, border, borderStrong, accent, onAccent, onAccentSecondary, scrim)
+        listOf(background, surface, surfaceRaised, fill, glass, glassEdge, textPrimary, textSecondary, textTertiary, border, borderStrong, accent, onAccent, onAccentSecondary, scrim, shadow)
 
     private fun contrast(a: Color, b: Color): Double {
         val (hi, lo) = listOf(a.luminance(), b.luminance()).sortedDescending()

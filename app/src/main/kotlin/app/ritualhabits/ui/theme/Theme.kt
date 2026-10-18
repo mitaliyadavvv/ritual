@@ -72,7 +72,7 @@ private fun RitualColors.toMaterial(): ColorScheme {
     val base = if (isDark) darkColorScheme() else lightColorScheme()
     return base.copy(
         primary = accent, onPrimary = onAccent,
-        primaryContainer = surfaceRaised, onPrimaryContainer = textPrimary,
+        primaryContainer = fill, onPrimaryContainer = textPrimary,
         inversePrimary = onAccent,
         secondary = textSecondary, onSecondary = onAccent,
         secondaryContainer = surfaceRaised, onSecondaryContainer = textPrimary,
@@ -84,8 +84,8 @@ private fun RitualColors.toMaterial(): ColorScheme {
         surfaceTint = background,
         surfaceBright = surface, surfaceDim = background,
         surfaceContainerLowest = surface, surfaceContainerLow = surface,
-        surfaceContainer = surface, surfaceContainerHigh = surfaceRaised,
-        surfaceContainerHighest = surfaceRaised,
+        surfaceContainer = surface, surfaceContainerHigh = surface,
+        surfaceContainerHighest = fill,
         inverseSurface = accent, inverseOnSurface = onAccent,
         outline = borderStrong, outlineVariant = border,
         error = textPrimary, onError = onAccent,

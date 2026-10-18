@@ -14,11 +14,11 @@ import androidx.compose.runtime.staticCompositionLocalOf
 
 /**
  * Motion guidelines
- * - Quick (120 ms): state feedback — press, toggle, check fill.
- * - Standard (220 ms): content changes — tab cross-fade, expand/collapse.
+ * - Quick (140 ms): state feedback — press, toggle, check fill.
+ * - Standard (240 ms): content changes — tab cross-fade, expand/collapse.
  * - Emphasized (320 ms): spatial moves — sheets, pushed screens.
- * - Playful (spring, slight overshoot): the completion stamp, counters ticking, segments filling.
- *   Used sparingly, at most one playful motion per interaction.
+ * - Settle (critically-damped-ish spring, no visible bounce): completion marks, progress rings,
+ *   sliding thumbs, the selected tab. Feels physical without wobbling.
  * - Never animate purely for decoration; never exceed 400 ms.
  * - When the system "Remove animations" setting is on (animator scale 0), every spec snaps.
  */
@@ -31,15 +31,19 @@ data class RitualMotion(val reduced: Boolean) {
     fun <T> standard(): FiniteAnimationSpec<T> = spec(STANDARD_MS, standardEasing)
     fun <T> emphasized(): FiniteAnimationSpec<T> = spec(EMPHASIZED_MS, standardEasing)
     fun <T> exit(): FiniteAnimationSpec<T> = spec(QUICK_MS, exitEasing)
-    fun <T> playful(): FiniteAnimationSpec<T> =
-        if (reduced) snap() else spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow)
+    fun <T> settle(): FiniteAnimationSpec<T> =
+        if (reduced) snap() else spring(dampingRatio = 0.82f, stiffness = Spring.StiffnessMediumLow)
+
+    /** Slightly livelier settle for one moment of emphasis (finishing the day). */
+    fun <T> emphasis(): FiniteAnimationSpec<T> =
+        if (reduced) snap() else spring(dampingRatio = 0.62f, stiffness = Spring.StiffnessLow)
 
     private fun <T> spec(ms: Int, easing: Easing): FiniteAnimationSpec<T> =
         if (reduced) snap() else tween(ms, easing = easing)
 
     companion object {
-        const val QUICK_MS = 120
-        const val STANDARD_MS = 220
+        const val QUICK_MS = 140
+        const val STANDARD_MS = 240
         const val EMPHASIZED_MS = 320
 
         fun fromSystem(context: Context): RitualMotion {

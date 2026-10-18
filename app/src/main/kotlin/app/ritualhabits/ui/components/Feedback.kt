@@ -67,7 +67,7 @@ fun DelayedLoadingIndicator(label: String, modifier: Modifier = Modifier) {
     }
 }
 
-/** Inverted (black-on-white / white-on-black) snackbar, placed above the bottom bar. */
+/** Inverted snackbar (near-black on light, near-white on dark), floating above the tab bar. */
 @Composable
 fun RitualSnackbarHost(state: SnackbarHostState, bottomInset: PaddingValues, modifier: Modifier = Modifier) {
     SnackbarHost(
@@ -100,7 +100,7 @@ fun ConfirmDialog(
         containerColor = Ritual.colors.surface,
         titleContentColor = Ritual.colors.textPrimary,
         textContentColor = Ritual.colors.textSecondary,
-        shape = RoundedCornerShape(Radii.lg),
+        shape = RoundedCornerShape(Radii.xl),
         tonalElevation = 0.dp,
         title = { Text(title, style = RitualType.heading) },
         text = { Text(body, style = RitualType.bodySmall) },
@@ -111,7 +111,7 @@ fun ConfirmDialog(
 
 data class MenuAction(val label: String, val onClick: () -> Unit)
 
-/** Hairline-bordered dropdown; items are ≥ 48 dp tall. */
+/** Opaque floating menu: soft shadow in light, hairline edge in dark; items are ≥ 48 dp tall. */
 @Composable
 fun RitualMenu(expanded: Boolean, onDismiss: () -> Unit, actions: List<MenuAction>) {
     val c = Ritual.colors
@@ -121,12 +121,12 @@ fun RitualMenu(expanded: Boolean, onDismiss: () -> Unit, actions: List<MenuActio
         shape = RoundedCornerShape(Radii.md),
         containerColor = c.surface,
         tonalElevation = 0.dp,
-        shadowElevation = 4.dp,
-        border = BorderStroke(Sizes.hairline, c.border),
+        shadowElevation = if (c.isDark) 0.dp else 12.dp,
+        border = if (c.isDark) BorderStroke(Sizes.hairline, c.border) else null,
     ) {
         actions.forEach { action ->
             DropdownMenuItem(
-                text = { Text(action.label, style = RitualType.body) },
+                text = { Text(action.label, style = RitualType.rowTitle) },
                 onClick = {
                     onDismiss()
                     action.onClick()
