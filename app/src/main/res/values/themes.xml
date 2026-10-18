@@ -1,6 +1,11 @@
 <resources>
-    <!-- Window-level theme only; all in-app styling comes from the Compose theme (Stage 3). -->
+    <!-- Window-level themes only; in-app styling comes from the Compose RitualTheme. -->
     <style name="Theme.Ritual" parent="android:Theme.Material.Light.NoActionBar">
-        <item name="android:windowBackground">#FFFFFFFF</item>
+        <item name="android:windowBackground">@color/window_background</item>
+    </style>
+
+    <style name="Theme.Ritual.Splash" parent="Theme.SplashScreen">
+        <item name="windowSplashScreenBackground">@color/window_background</item>
+        <item name="postSplashScreenTheme">@style/Theme.Ritual</item>
     </style>
 </resources>

@@ -1,0 +1,4 @@
+<resources>
+    <!-- Mirrors RitualColors.background (light). -->
+    <color name="window_background">#FFFAFAFA</color>
+</resources>
