@@ -10,6 +10,7 @@ import app.ritualhabits.RitualApp
 import app.ritualhabits.core.model.ThemeMode
 import app.ritualhabits.data.repository.PreferencesRepository
 import app.ritualhabits.di.AppContainer
+import app.ritualhabits.ui.manage.ManageViewModel
 import app.ritualhabits.ui.settings.SettingsViewModel
 import app.ritualhabits.ui.today.TodayViewModel
 import kotlinx.coroutines.flow.SharingStarted
@@ -36,6 +37,7 @@ object RitualViewModels {
         initializer { AppViewModel(container().preferences) }
         initializer { SettingsViewModel(container().preferences) }
         initializer { container().run { TodayViewModel(habits, completions, habitDay.today) } }
+        initializer { container().run { ManageViewModel(habits, clock) } }
     }
 
     private fun CreationExtras.container(): AppContainer = (this[APPLICATION_KEY] as RitualApp).container

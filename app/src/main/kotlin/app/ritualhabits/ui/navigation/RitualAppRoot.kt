@@ -36,6 +36,7 @@ import app.ritualhabits.ui.components.RitualIconButton
 import app.ritualhabits.ui.components.RitualIcons
 import app.ritualhabits.ui.components.ScreenColumn
 import app.ritualhabits.ui.components.ScreenHeader
+import app.ritualhabits.ui.manage.ManageRoute
 import app.ritualhabits.ui.settings.SettingsRoute
 import app.ritualhabits.ui.theme.Ritual
 import app.ritualhabits.ui.theme.Sizes
@@ -94,10 +95,7 @@ fun RitualAppRoot(navController: NavHostController = rememberNavController()) {
                 )
             }
             composable(TopLevelDestination.MANAGE.route) {
-                TabPlaceholder(
-                    TopLevelDestination.MANAGE, tabBottomInset, { navController.navigate(Routes.SETTINGS) },
-                    title = "Your habits", body = "Create, edit, reorder and archive habits here.",
-                )
+                ManageRoute(tabBottomInset, onOpenSettings = { navController.navigate(Routes.SETTINGS) })
             }
             composable(
                 Routes.SETTINGS,

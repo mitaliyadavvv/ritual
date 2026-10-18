@@ -189,6 +189,8 @@ every past-day result is a pure function of append-only facts.
 | Create habit | insert period `[T, ∞)`, so it is **required from its creation day** |
 | Archive / delete | close the open period at `T` (`end_date = T`): no longer required *from today*. If the period started on `T` (created and removed the same day), the empty period is deleted |
 | Restore / undo delete | if a period ended exactly at `T` (or later), reopen it, so there is no gap; otherwise insert `[T, ∞)` |
+| Undo delete | returns the habit to its prior state: an archived habit stays archived (no period change); an active one is reactivated as above |
+| Reorder | `sort_order` only, rewritten atomically for the active list. Never touches periods or completions |
 | Rename / edit description / reorder | **no change.** History is keyed by `habit_id`, not name |
 
 ### Why history cannot be rewritten
@@ -196,6 +198,14 @@ every past-day result is a pure function of append-only facts.
 - Completions can only be written for **today** (manual toggle), or by a focus session for the day it ended.
 - Completions are only accepted for habits **eligible on that date**. An archived or deleted habit cannot gain new completions.
 - Nothing is hard-deleted except via *Clear all local data*.
+
+### Same-day guarantees (verified in Stage 4b)
+- Archive then restore on the same day restores the *identical* period list, so today's completion counts again.
+- Create, archive and restore on the same day: the empty period is removed, then `[T, ∞)` is re-inserted.
+- `HistoryIntegrityPropertyTest` replays 300 random 40-day lifecycles (create, archive, delete, restore,
+  complete; several actions per day) and asserts that no action on day `T` changes any result for a day
+  before `T`, and that no habit ever has overlapping or multiple open periods. A deliberately broken rule
+  makes it fail.
 
 **Today is provisional.** Until midnight, archiving or adding a habit can change *today's* outcome (adding
 a habit at 23:00 means today needs it too, as you decided). Once the day passes it is fixed.

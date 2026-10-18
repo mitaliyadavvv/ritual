@@ -80,6 +80,22 @@ class HabitRepository(
         idsInOrder.forEachIndexed { index, id -> habitDao.setSortOrder(id, index) }
     }
 
+    /**
+     * Move an active habit [by] positions (negative = up) within the active order. Reads the order
+     * inside the transaction, so rapid repeated moves are applied to the latest order.
+     * Returns false at either end of the list.
+     */
+    suspend fun move(id: String, by: Int): Boolean = db.withTransaction {
+        val order = habitDao.activeOrdered().map { it.id }.toMutableList()
+        val from = order.indexOf(id)
+        if (from < 0) return@withTransaction false
+        val to = (from + by).coerceIn(0, order.lastIndex)
+        if (to == from) return@withTransaction false
+        order.add(to, order.removeAt(from))
+        order.forEachIndexed { index, habitId -> habitDao.setSortOrder(habitId, index) }
+        true
+    }
+
     suspend fun archive(id: String): HabitWriteResult = deactivate(id) { it.copy(archivedAt = clock.now()) }
 
     /** Soft delete: hidden everywhere, history kept so past results never change. */
@@ -95,6 +111,24 @@ class HabitRepository(
         habitDao.update(habit.copy(archivedAt = null, deletedAt = null))
         val periods = periodDao.forHabit(id).map { it.toModel() }
         apply(EligibilityRules.onReactivate(id, periods, clock.today()))
+        HabitWriteResult.Success(id)
+    }
+
+    /**
+     * Undo a delete: return the habit to the state it had before (active or archived).
+     * Only an active habit becomes required again, from today.
+     */
+    suspend fun undoDelete(id: String): HabitWriteResult = db.withTransaction {
+        val habit = habitDao.get(id) ?: return@withTransaction HabitWriteResult.NotFound
+        if (!habit.isDeleted) return@withTransaction HabitWriteResult.Success(id)
+        if (habitDao.liveNames(excludingId = id).any { it.equals(habit.name, ignoreCase = true) }) {
+            return@withTransaction HabitWriteResult.Invalid(HabitInputError.NAME_DUPLICATE)
+        }
+        habitDao.update(habit.copy(deletedAt = null))
+        if (habit.archivedAt == null) {
+            val periods = periodDao.forHabit(id).map { it.toModel() }
+            apply(EligibilityRules.onReactivate(id, periods, clock.today()))
+        }
         HabitWriteResult.Success(id)
     }
 

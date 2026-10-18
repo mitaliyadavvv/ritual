@@ -13,14 +13,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
-import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.progressSemantics
 import androidx.compose.foundation.selection.toggleable
-import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.CircularProgressIndicator
-import androidx.compose.material3.Snackbar
-import androidx.compose.material3.SnackbarHost
 import androidx.compose.material3.SnackbarHostState
 import androidx.compose.material3.Text
 import androidx.compose.material3.ripple
@@ -28,10 +23,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.key
-import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.rememberUpdatedState
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.semantics.Role
@@ -44,6 +37,7 @@ import androidx.lifecycle.compose.collectAsStateWithLifecycle
 import androidx.lifecycle.viewmodel.compose.viewModel
 import app.ritualhabits.ui.RitualViewModels
 import app.ritualhabits.ui.components.CompletionCheck
+import app.ritualhabits.ui.components.DelayedLoadingIndicator
 import app.ritualhabits.ui.components.EmptyState
 import app.ritualhabits.ui.components.Hairline
 import app.ritualhabits.ui.components.Module
@@ -51,17 +45,16 @@ import app.ritualhabits.ui.components.PrimaryButton
 import app.ritualhabits.ui.components.ProgressTrack
 import app.ritualhabits.ui.components.RitualIconButton
 import app.ritualhabits.ui.components.RitualIcons
+import app.ritualhabits.ui.components.RitualSnackbarHost
 import app.ritualhabits.ui.components.ScreenColumn
 import app.ritualhabits.ui.components.ScreenHeader
 import app.ritualhabits.ui.components.SecondaryButton
 import app.ritualhabits.ui.components.SectionLabel
 import app.ritualhabits.ui.habits.HabitEditorSheet
 import app.ritualhabits.ui.navigation.SettingsButton
-import app.ritualhabits.ui.theme.Radii
 import app.ritualhabits.ui.theme.Ritual
 import app.ritualhabits.ui.theme.RitualType
 import app.ritualhabits.ui.theme.Spacing
-import kotlinx.coroutines.delay
 import kotlinx.datetime.LocalDate
 import kotlinx.datetime.toJavaLocalDate
 import java.time.format.DateTimeFormatter
@@ -106,20 +99,7 @@ fun TodayRoute(
             onRetry = viewModel::retry,
             onOpenSettings = onOpenSettings,
         )
-        SnackbarHost(
-            snackbar,
-            Modifier
-                .align(Alignment.BottomCenter)
-                .padding(bottomInset)
-                .padding(horizontal = Ritual.layout.gutter),
-        ) { data ->
-            Snackbar(
-                data,
-                shape = RoundedCornerShape(Radii.md),
-                containerColor = Ritual.colors.accent,
-                contentColor = Ritual.colors.onAccent,
-            )
-        }
+        RitualSnackbarHost(snackbar, bottomInset, Modifier.align(Alignment.BottomCenter))
     }
 
     form?.let {
@@ -158,7 +138,7 @@ fun TodayScreen(
         Spacer(Modifier.height(Spacing.xl))
 
         when (state) {
-            TodayUiState.Loading -> LoadingIndicator()
+            TodayUiState.Loading -> DelayedLoadingIndicator("Loading habits")
             TodayUiState.Error -> EmptyState(
                 icon = RitualIcons.Today,
                 title = "Couldn't load your habits",
@@ -256,27 +236,6 @@ private fun HabitRow(habit: TodayHabit, onToggle: () -> Unit) {
                 Spacer(Modifier.height(Spacing.xxs))
                 Text(habit.description, style = RitualType.bodySmall, color = c.textSecondary, maxLines = 2)
             }
-        }
-    }
-}
-
-/** Shown only if loading takes longer than a moment, so fast loads don't flicker. */
-@Composable
-private fun LoadingIndicator() {
-    var visible by remember { mutableStateOf(false) }
-    LaunchedEffect(Unit) {
-        delay(300)
-        visible = true
-    }
-    Box(Modifier.fillMaxWidth().padding(top = Spacing.xxxl), contentAlignment = Alignment.Center) {
-        if (visible) {
-            CircularProgressIndicator(
-                color = Ritual.colors.textSecondary,
-                strokeWidth = 2.dp,
-                modifier = Modifier
-                    .size(24.dp)
-                    .semantics { contentDescription = "Loading habits" },
-            )
         }
     }
 }

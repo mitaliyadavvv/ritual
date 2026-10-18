@@ -49,6 +49,9 @@ object RitualIcons {
     }
     val Back: ImageVector by lazy { icon("back") { moveTo(15f, 5f); lineTo(8f, 12f); lineTo(15f, 19f) } }
     val Add: ImageVector by lazy { icon("add") { moveTo(12f, 5f); lineTo(12f, 19f); moveTo(5f, 12f); lineTo(19f, 12f) } }
+    val More: ImageVector by lazy { icon("more") { circle(5.5f, 12f, 0.9f); circle(12f, 12f, 0.9f); circle(18.5f, 12f, 0.9f) } }
+    val ArrowUp: ImageVector by lazy { icon("arrow_up") { moveTo(12f, 19f); lineTo(12f, 5f); moveTo(6f, 11f); lineTo(12f, 5f); lineTo(18f, 11f) } }
+    val ArrowDown: ImageVector by lazy { icon("arrow_down") { moveTo(12f, 5f); lineTo(12f, 19f); moveTo(6f, 13f); lineTo(12f, 19f); lineTo(18f, 13f) } }
     val Check: ImageVector by lazy { icon("check") { moveTo(5.5f, 12.5f); lineTo(10f, 17f); lineTo(18.5f, 7.5f) } }
 
     private fun icon(name: String, block: PathBuilder.() -> Unit): ImageVector =

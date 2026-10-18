@@ -22,6 +22,9 @@ interface HabitDao {
     @Query("SELECT * FROM habits ORDER BY sort_order, created_at")
     fun observeAll(): Flow<List<HabitEntity>>
 
+    @Query("SELECT * FROM habits WHERE archived_at IS NULL AND deleted_at IS NULL ORDER BY sort_order, created_at")
+    suspend fun activeOrdered(): List<HabitEntity>
+
     @Query("SELECT * FROM habits WHERE id = :id")
     suspend fun get(id: String): HabitEntity?
 

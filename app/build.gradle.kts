@@ -40,7 +40,7 @@ android {
         unitTests.all { test ->
             // Compose UI tests need the debug-only ui-test-manifest host activity.
             if (test.name == "testReleaseUnitTest") {
-                test.exclude("**/NavigationUiTest*", "**/TodayJourneyTest*")
+                test.exclude("**/NavigationUiTest*", "**/TodayJourneyTest*", "**/ManageJourneyTest*")
             }
         }
     }

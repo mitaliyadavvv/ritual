@@ -37,3 +37,15 @@ object EligibilityRules {
         }
     }
 }
+
+/**
+ * The period list after [change]. Pure mirror of what the repository writes to the database,
+ * used to reason about (and property-test) the rules without storage.
+ */
+fun List<EligibilityPeriod>.after(change: PeriodChange): List<EligibilityPeriod> = when (change) {
+    PeriodChange.None -> this
+    is PeriodChange.Insert -> this + change.period
+    is PeriodChange.Close -> map { if (it == change.period) it.copy(endDateExclusive = change.endDateExclusive) else it }
+    is PeriodChange.Remove -> filterNot { it == change.period }
+    is PeriodChange.Reopen -> map { if (it == change.period) it.copy(endDateExclusive = null) else it }
+}
