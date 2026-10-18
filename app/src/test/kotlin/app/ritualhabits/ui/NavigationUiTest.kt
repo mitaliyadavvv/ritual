@@ -18,8 +18,11 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /** Robolectric Compose test of the app shell: tabs, Settings entry point, back, semantics. */
+// Realistic phone size (the default 320x470 dp test screen hides rows behind the bottom bar).
+@Config(qualifiers = "w411dp-h891dp")
 @RunWith(RobolectricTestRunner::class)
 class NavigationUiTest {
     @get:Rule val compose = createComposeRule()

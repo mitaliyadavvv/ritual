@@ -12,7 +12,11 @@ import app.ritualhabits.ui.theme.LightColors
 import app.ritualhabits.ui.theme.RitualColors
 import app.ritualhabits.ui.theme.RitualHaptics
 import app.ritualhabits.ui.theme.isDark
+import app.ritualhabits.ui.today.TodayHabit
+import app.ritualhabits.ui.today.TodayUiState
 import app.ritualhabits.ui.today.formatHabitDay
+import app.ritualhabits.ui.today.todayRuleLine
+import app.ritualhabits.ui.today.todayStatement
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.luminance
 import kotlinx.datetime.LocalDate
@@ -44,6 +48,7 @@ class DesignSystemTest {
                 assertTrue(contrast(p.textSecondary, bg) >= 4.5, "secondary ${contrast(p.textSecondary, bg)} on $bg")
             }
             assertTrue(contrast(p.onAccent, p.accent) >= 7.0)
+            assertTrue(contrast(p.onAccentSecondary, p.accent) >= 4.5, "inverted secondary ${contrast(p.onAccentSecondary, p.accent)}")
         }
     }
 
@@ -79,12 +84,29 @@ class DesignSystemTest {
         assertEquals(listOf("Today", "Progress", "Focus", "Manage"), TopLevelDestination.entries.map { it.label })
     }
 
+    @Test fun `today statement copy follows the state`() {
+        fun ready(done: Int, total: Int, streak: Int = 0) = TodayUiState.Ready(
+            date = LocalDate(2026, 10, 18),
+            habits = List(total) { TodayHabit("h$it", "Habit $it", null, completed = it < done) },
+            hasActiveHabits = true,
+            currentStreak = streak,
+        )
+        assertEquals("Let's begin.", todayStatement(ready(0, 3)))
+        assertEquals("Keep it going.", todayStatement(ready(0, 3, streak = 4)))
+        assertEquals("One to go.", todayStatement(ready(2, 3)))
+        assertEquals("Two to go.", todayStatement(ready(1, 3)))
+        assertEquals("12 to go.", todayStatement(ready(1, 13)))
+        assertEquals("Day complete.", todayStatement(ready(3, 3)))
+        assertEquals("Finish all 3 and today counts.", todayRuleLine(ready(1, 3)))
+        assertEquals("Today counts toward your streak.", todayRuleLine(ready(3, 3)))
+    }
+
     @Test fun `habit day header format`() {
         assertEquals("Sunday, 18 October", formatHabitDay(LocalDate(2026, 10, 18), Locale.UK))
     }
 
     private fun RitualColors.all() =
-        listOf(background, surface, surfaceRaised, glass, textPrimary, textSecondary, textTertiary, border, borderStrong, accent, onAccent, scrim)
+        listOf(background, surface, surfaceRaised, glass, textPrimary, textSecondary, textTertiary, border, borderStrong, accent, onAccent, onAccentSecondary, scrim)
 
     private fun contrast(a: Color, b: Color): Double {
         val (hi, lo) = listOf(a.luminance(), b.luminance()).sortedDescending()

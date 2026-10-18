@@ -10,7 +10,8 @@ import androidx.compose.ui.graphics.vector.path
 import androidx.compose.ui.unit.dp
 
 /**
- * Hand-drawn 24×24 line icons in one consistent style (1.6 stroke, round caps).
+ * Hand-drawn 24×24 line icons in one consistent style (2.0 stroke, round caps), weighted to
+ * sit beside Outfit's bold display type.
  * Tinted at draw time, so they follow the theme.
  */
 object RitualIcons {
@@ -58,7 +59,7 @@ object RitualIcons {
         ImageVector.Builder(name, 24.dp, 24.dp, 24f, 24f).apply {
             path(
                 stroke = SolidColor(Color.Black),
-                strokeLineWidth = 1.6f,
+                strokeLineWidth = 2f,
                 strokeLineCap = StrokeCap.Round,
                 strokeLineJoin = StrokeJoin.Round,
                 pathBuilder = block,

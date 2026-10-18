@@ -9,6 +9,7 @@ import app.ritualhabits.data.local.RitualDatabase
 import app.ritualhabits.data.repository.CompletionRepository
 import app.ritualhabits.data.repository.HabitRepository
 import app.ritualhabits.ui.theme.HapticEvent
+import app.ritualhabits.ui.today.DayMark
 import app.ritualhabits.ui.today.TodayEvent
 import app.ritualhabits.ui.today.TodayUiState
 import app.ritualhabits.ui.today.TodayViewModel
@@ -35,6 +36,7 @@ import org.robolectric.RobolectricTestRunner
 import kotlin.test.assertEquals
 import kotlin.test.assertIs
 import kotlin.test.assertNull
+import kotlin.time.Duration.Companion.hours
 import kotlin.time.Duration.Companion.minutes
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -187,6 +189,26 @@ class TodayViewModelTest {
         vm.toggle(id)
         assertIs<TodayEvent.Message>(vm.nextEvent())
         assertEquals(0, db.completionDao().count())
+    }
+
+    @Test fun `week strip marks the last seven days from stored results`() = runBlocking<Unit> {
+        clock.advanceBy(-(2 * 24).hours) // start two days ago
+        today.value = clock.today()
+        val vm = newViewModel()
+        vm.ready()
+        vm.add("Read")
+        vm.toggle(vm.ready { it.total == 1 }.habits.single().id); vm.nextEvent() // day -2: complete
+        clock.advanceBy(24.hours); today.value = clock.today()                // day -1: missed
+        clock.advanceBy(24.hours); today.value = clock.today()                // today: pending
+
+        val week = vm.ready { it.date == clock.today() }.week
+        assertEquals(7, week.size)
+        assertEquals(clock.today(), week.last().date)
+        assertEquals(
+            listOf(DayMark.NONE, DayMark.NONE, DayMark.NONE, DayMark.NONE, DayMark.COMPLETE, DayMark.MISSED, DayMark.PENDING),
+            week.map { it.mark },
+        )
+        assertEquals(listOf(false, false, false, false, false, false, true), week.map { it.isToday })
     }
 
     @Test fun `database failure shows the error state`() = runBlocking<Unit> {

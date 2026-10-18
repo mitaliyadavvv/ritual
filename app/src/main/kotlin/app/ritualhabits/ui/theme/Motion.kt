@@ -5,7 +5,9 @@ import android.provider.Settings
 import androidx.compose.animation.core.CubicBezierEasing
 import androidx.compose.animation.core.Easing
 import androidx.compose.animation.core.FiniteAnimationSpec
+import androidx.compose.animation.core.Spring
 import androidx.compose.animation.core.snap
+import androidx.compose.animation.core.spring
 import androidx.compose.animation.core.tween
 import androidx.compose.runtime.Immutable
 import androidx.compose.runtime.staticCompositionLocalOf
@@ -15,6 +17,8 @@ import androidx.compose.runtime.staticCompositionLocalOf
  * - Quick (120 ms): state feedback — press, toggle, check fill.
  * - Standard (220 ms): content changes — tab cross-fade, expand/collapse.
  * - Emphasized (320 ms): spatial moves — sheets, pushed screens.
+ * - Playful (spring, slight overshoot): the completion stamp, counters ticking, segments filling.
+ *   Used sparingly, at most one playful motion per interaction.
  * - Never animate purely for decoration; never exceed 400 ms.
  * - When the system "Remove animations" setting is on (animator scale 0), every spec snaps.
  */
@@ -27,6 +31,8 @@ data class RitualMotion(val reduced: Boolean) {
     fun <T> standard(): FiniteAnimationSpec<T> = spec(STANDARD_MS, standardEasing)
     fun <T> emphasized(): FiniteAnimationSpec<T> = spec(EMPHASIZED_MS, standardEasing)
     fun <T> exit(): FiniteAnimationSpec<T> = spec(QUICK_MS, exitEasing)
+    fun <T> playful(): FiniteAnimationSpec<T> =
+        if (reduced) snap() else spring(dampingRatio = 0.55f, stiffness = Spring.StiffnessMediumLow)
 
     private fun <T> spec(ms: Int, easing: Easing): FiniteAnimationSpec<T> =
         if (reduced) snap() else tween(ms, easing = easing)

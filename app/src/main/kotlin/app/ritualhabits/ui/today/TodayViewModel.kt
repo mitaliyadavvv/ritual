@@ -24,7 +24,9 @@ import kotlinx.coroutines.flow.receiveAsFlow
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
+import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.minus
 
 data class TodayHabit(
     val id: String,
@@ -32,6 +34,20 @@ data class TodayHabit(
     val description: String?,
     val completed: Boolean,
 )
+
+/** How a day looks in the seven-day strip. Derived from core's DayResult, not recomputed. */
+enum class DayMark {
+    /** Every required habit was done: the day counts toward the streak. */
+    COMPLETE,
+    /** Habits were required and at least one was missed. */
+    MISSED,
+    /** Today, not yet complete. */
+    PENDING,
+    /** No habits were required (before you started, or everything archived). */
+    NONE,
+}
+
+data class WeekDay(val date: LocalDate, val mark: DayMark, val isToday: Boolean)
 
 sealed interface TodayUiState {
     data object Loading : TodayUiState
@@ -42,7 +58,10 @@ sealed interface TodayUiState {
         /** Active habits exist but none is required today (only possible after a clock change). */
         val hasActiveHabits: Boolean,
         val currentStreak: Int,
+        /** The last seven habit days, oldest first, ending today. */
+        val week: List<WeekDay> = emptyList(),
     ) : TodayUiState {
+        val remaining: Int get() = total - completed
         val total: Int get() = habits.size
         val completed: Int get() = habits.count { it.completed }
         val allDone: Boolean get() = total > 0 && completed == total
@@ -82,6 +101,15 @@ class TodayViewModel(
                 habits = due.map { TodayHabit(it.id, it.name, it.description, history.isCompleted(it.id, date)) },
                 hasActiveHabits = active.isNotEmpty(),
                 currentStreak = StreakCalculator.summarize(history, date).currentStreak,
+                week = StreakCalculator.days(history, date.minus(6, DateTimeUnit.DAY), date).map { day ->
+                    val mark = when {
+                        day.qualified -> DayMark.COMPLETE
+                        day.required == 0 -> DayMark.NONE
+                        day.date == date -> DayMark.PENDING
+                        else -> DayMark.MISSED
+                    }
+                    WeekDay(day.date, mark, isToday = day.date == date)
+                },
             ) as TodayUiState
         }
             .onStart { emit(TodayUiState.Loading) }

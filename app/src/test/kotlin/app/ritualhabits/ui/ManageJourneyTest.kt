@@ -14,6 +14,7 @@ import androidx.compose.ui.test.onAllNodesWithText
 import androidx.compose.ui.test.onNodeWithContentDescription
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.printToString
@@ -23,6 +24,7 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 import kotlin.test.assertTrue
 
 /**
@@ -31,6 +33,8 @@ import kotlin.test.assertTrue
  * doesn't route touches, so their buttons are invoked through their OnClick semantics action.
  */
 @OptIn(ExperimentalTestApi::class)
+// Realistic phone size (the default 320x470 dp test screen hides rows behind the bottom bar).
+@Config(qualifiers = "w411dp-h891dp")
 @RunWith(RobolectricTestRunner::class)
 class ManageJourneyTest {
     @get:Rule val compose = createComposeRule()
@@ -79,32 +83,32 @@ class ManageJourneyTest {
         // Reorder: move Walk above Read.
         compose.onNodeWithText("Reorder").performClick()
         awaitCount(hasContentDescription("Move Walk up"))
-        compose.onNodeWithContentDescription("Move Walk up").performClick()
+        compose.onNodeWithContentDescription("Move Walk up").performScrollTo().performClick()
         compose.waitUntil(15_000) { rowOrder("Walk", "Read").let { it[0] < it[1] } }
         compose.onNodeWithText("Done").performClick()
 
         // Archive Read from its menu.
-        compose.onNodeWithContentDescription("More options for Read").performClick()
+        compose.onNodeWithContentDescription("More options for Read").performScrollTo().performClick()
         clickInPopup("Archive")
         awaitCount(hasText("Archived · 1"))
         compose.onNodeWithText("Archived · 1").performClick()
         awaitCount(hasText("Not shown on Today. History is kept."))
 
         // Restore it.
-        compose.onNodeWithContentDescription("More options for Read").performClick()
+        compose.onNodeWithContentDescription("More options for Read").performScrollTo().performClick()
         clickInPopup("Restore")
         awaitCount(hasText("Archived · 0"))
 
         // Delete Walk: cancelling keeps it, confirming removes it.
         compose.onNodeWithText("Active · 2").performClick()
-        compose.onNodeWithContentDescription("More options for Walk").performClick()
+        compose.onNodeWithContentDescription("More options for Walk").performScrollTo().performClick()
         clickInPopup("Delete…")
         awaitCount(hasText("Delete “Walk”?"))
         clickInPopup("Cancel")
         awaitCount(hasText("Delete “Walk”?"), count = 0)
         awaitCount(hasText("Active · 2"))
 
-        compose.onNodeWithContentDescription("More options for Walk").performClick()
+        compose.onNodeWithContentDescription("More options for Walk").performScrollTo().performClick()
         clickInPopup("Delete…")
         clickInPopup("Delete")
         awaitCount(hasText("Active · 1"))

@@ -15,6 +15,7 @@ import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.defaultMinSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.heightIn
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.selection.selectable
@@ -64,9 +65,9 @@ fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
     Button(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minHeight = Sizes.minTouchTarget).pressScale(interaction),
+        modifier = modifier.defaultMinSize(minHeight = 56.dp).pressScale(interaction),
         interactionSource = interaction,
-        shape = RoundedCornerShape(Radii.md),
+        shape = CircleShape,
         colors = ButtonDefaults.buttonColors(
             containerColor = Ritual.colors.accent,
             contentColor = Ritual.colors.onAccent,
@@ -74,7 +75,7 @@ fun PrimaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modifi
             disabledContentColor = Ritual.colors.textTertiary,
         ),
         elevation = null,
-        contentPadding = PaddingValues(horizontal = Spacing.xl, vertical = Spacing.md),
+        contentPadding = PaddingValues(horizontal = Spacing.xxl, vertical = Spacing.lg),
     ) { Text(text, style = RitualType.label) }
 }
 
@@ -85,12 +86,12 @@ fun SecondaryButton(text: String, onClick: () -> Unit, modifier: Modifier = Modi
     OutlinedButton(
         onClick = onClick,
         enabled = enabled,
-        modifier = modifier.defaultMinSize(minHeight = Sizes.minTouchTarget).pressScale(interaction),
+        modifier = modifier.defaultMinSize(minHeight = 56.dp).pressScale(interaction),
         interactionSource = interaction,
-        shape = RoundedCornerShape(Radii.md),
-        border = BorderStroke(Sizes.hairline, Ritual.colors.borderStrong),
+        shape = CircleShape,
+        border = BorderStroke(Sizes.stroke, Ritual.colors.textPrimary),
         colors = ButtonDefaults.outlinedButtonColors(contentColor = Ritual.colors.textPrimary),
-        contentPadding = PaddingValues(horizontal = Spacing.xl, vertical = Spacing.md),
+        contentPadding = PaddingValues(horizontal = Spacing.xxl, vertical = Spacing.lg),
     ) { Text(text, style = RitualType.label) }
 }
 
@@ -119,7 +120,7 @@ fun RitualIconButton(
             Modifier
                 .size(40.dp)
                 .pressScale(interaction)
-                .then(if (outlined) Modifier.border(Sizes.hairline, Ritual.colors.border, CircleShape) else Modifier),
+                .then(if (outlined) Modifier.border(Sizes.stroke, Ritual.colors.textPrimary, CircleShape) else Modifier),
             contentAlignment = Alignment.Center,
         ) {
             Icon(icon, contentDescription = null, tint = Ritual.colors.textPrimary, modifier = Modifier.size(Sizes.iconSmall))
@@ -163,8 +164,8 @@ fun <T> SegmentedChoice(
     Row(
         modifier = modifier
             .fillMaxWidth()
-            .height(Sizes.minTouchTarget)
-            .clip(RoundedCornerShape(Radii.md))
+            .heightIn(min = 52.dp)
+            .clip(CircleShape)
             .background(c.surfaceRaised)
             .padding(Spacing.xs)
             .selectableGroup(),
@@ -172,16 +173,15 @@ fun <T> SegmentedChoice(
     ) {
         options.forEach { option ->
             val isSelected = option == selected
-            val bg by animateColorAsState(if (isSelected) c.surface else c.surfaceRaised, Ritual.motion.quick(), label = "seg")
-            val fg by animateColorAsState(if (isSelected) c.textPrimary else c.textSecondary, Ritual.motion.quick(), label = "segText")
+            val bg by animateColorAsState(if (isSelected) c.accent else c.surfaceRaised, Ritual.motion.quick(), label = "seg")
+            val fg by animateColorAsState(if (isSelected) c.onAccent else c.textSecondary, Ritual.motion.quick(), label = "segText")
             Box(
                 modifier = Modifier
                     .weight(1f)
                     .fillMaxWidth()
-                    .height(Sizes.minTouchTarget - Spacing.sm)
-                    .clip(RoundedCornerShape(Radii.sm))
+                    .heightIn(min = Sizes.minTouchTarget - Spacing.xs)
+                    .clip(CircleShape)
                     .background(bg)
-                    .then(if (isSelected) Modifier.border(Sizes.hairline, c.border, RoundedCornerShape(Radii.sm)) else Modifier)
                     .selectable(selected = isSelected, role = Role.RadioButton) {
                         if (!isSelected) {
                             haptics.perform(HapticEvent.Selection)

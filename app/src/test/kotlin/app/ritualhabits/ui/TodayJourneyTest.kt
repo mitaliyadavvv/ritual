@@ -5,6 +5,7 @@ import androidx.compose.ui.test.ExperimentalTestApi
 import androidx.compose.ui.test.SemanticsMatcher
 import androidx.compose.ui.test.assertIsOff
 import androidx.compose.ui.test.assertIsOn
+import androidx.compose.ui.test.hasContentDescription
 import androidx.compose.ui.test.hasSetTextAction
 import androidx.compose.ui.test.hasText
 import androidx.compose.ui.test.isRoot
@@ -12,6 +13,7 @@ import androidx.compose.ui.test.isToggleable
 import androidx.compose.ui.test.junit4.createComposeRule
 import androidx.compose.ui.test.onNodeWithText
 import androidx.compose.ui.test.performClick
+import androidx.compose.ui.test.performScrollTo
 import androidx.compose.ui.test.performSemanticsAction
 import androidx.compose.ui.test.performTextInput
 import androidx.compose.ui.test.printToString
@@ -21,9 +23,12 @@ import org.junit.Rule
 import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
+import org.robolectric.annotation.Config
 
 /** End-to-end through the real app shell and Room: empty state → add → complete → uncomplete. */
 @OptIn(ExperimentalTestApi::class)
+// Realistic phone size (the default 320x470 dp test screen hides rows behind the bottom bar).
+@Config(qualifiers = "w411dp-h891dp")
 @RunWith(RobolectricTestRunner::class)
 class TodayJourneyTest {
     @get:Rule val compose = createComposeRule()
@@ -55,14 +60,14 @@ class TodayJourneyTest {
         val row = isToggleable() and hasText("Drink water")
         awaitNode(row)
         compose.onNode(row).assertIsOff()
-        awaitNode(hasText("0 of 1"), unmerged = true)
+        awaitNode(hasContentDescription("0 of 1 habits done today"))
 
-        compose.onNode(row).performClick()
-        awaitNode(hasText("1 of 1"), unmerged = true)
+        compose.onNode(row).performScrollTo().performClick()
+        awaitNode(hasContentDescription("1 of 1 habits done today"))
         compose.onNode(row).assertIsOn()
 
-        compose.onNode(row).performClick()
-        awaitNode(hasText("0 of 1"), unmerged = true)
+        compose.onNode(row).performScrollTo().performClick()
+        awaitNode(hasContentDescription("0 of 1 habits done today"))
         compose.onNode(row).assertIsOff()
     }
 }

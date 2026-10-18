@@ -26,38 +26,42 @@ data class RitualColors(
     /** Filled controls: black in light, white in dark. */
     val accent: Color,
     val onAccent: Color,
+    /** Secondary text on an accent (inverted) surface, e.g. unselected tabs, captions in the streak block. */
+    val onAccentSecondary: Color,
     val scrim: Color,
     val isDark: Boolean,
 )
 
 val LightColors = RitualColors(
-    background = Color(0xFFFAFAFA),
+    background = Color(0xFFF3F3F3),
     surface = Color(0xFFFFFFFF),
-    surfaceRaised = Color(0xFFF2F2F2),
+    surfaceRaised = Color(0xFFE6E6E6),
     glass = Color(0xEBFFFFFF),
     textPrimary = Color(0xFF0A0A0A),
-    textSecondary = Color(0xFF616161),
-    textTertiary = Color(0xFF8F8F8F),
-    border = Color(0xFFE5E5E5),
-    borderStrong = Color(0xFFC7C7C7),
+    textSecondary = Color(0xFF575757),
+    textTertiary = Color(0xFF8A8A8A),
+    border = Color(0xFFDADADA),
+    borderStrong = Color(0xFFABABAB),
     accent = Color(0xFF0A0A0A),
-    onAccent = Color(0xFFFAFAFA),
+    onAccent = Color(0xFFF3F3F3),
+    onAccentSecondary = Color(0xFFA8A8A8),
     scrim = Color(0x66000000),
     isDark = false,
 )
 
 val DarkColors = RitualColors(
-    background = Color(0xFF0A0A0A),
-    surface = Color(0xFF141414),
-    surfaceRaised = Color(0xFF1F1F1F),
-    glass = Color(0xE6141414),
-    textPrimary = Color(0xFFF5F5F5),
-    textSecondary = Color(0xFFA3A3A3),
+    background = Color(0xFF0B0B0B),
+    surface = Color(0xFF161616),
+    surfaceRaised = Color(0xFF242424),
+    glass = Color(0xE6161616),
+    textPrimary = Color(0xFFF3F3F3),
+    textSecondary = Color(0xFFA8A8A8),
     textTertiary = Color(0xFF6E6E6E),
-    border = Color(0xFF262626),
-    borderStrong = Color(0xFF3D3D3D),
-    accent = Color(0xFFF5F5F5),
-    onAccent = Color(0xFF0A0A0A),
+    border = Color(0xFF2A2A2A),
+    borderStrong = Color(0xFF555555),
+    accent = Color(0xFFF3F3F3),
+    onAccent = Color(0xFF0B0B0B),
+    onAccentSecondary = Color(0xFF575757),
     scrim = Color(0x99000000),
     isDark = true,
 )
@@ -77,10 +81,10 @@ object Spacing {
 
 @Immutable
 object Radii {
-    val sm: Dp = 8.dp
-    val md: Dp = 14.dp
-    val lg: Dp = 20.dp
-    val xl: Dp = 28.dp
+    val sm: Dp = 10.dp
+    val md: Dp = 16.dp
+    val lg: Dp = 24.dp
+    val xl: Dp = 32.dp
 }
 
 @Immutable
@@ -88,8 +92,13 @@ object Sizes {
     /** Minimum touch target for anything tappable (Material / WCAG 2.5.5). */
     val minTouchTarget: Dp = 48.dp
     val hairline: Dp = 1.dp
-    val icon: Dp = 22.dp
-    val iconSmall: Dp = 18.dp
+    /** Heavy editorial rule that opens a section. */
+    val rule: Dp = 2.dp
+    /** Stroke for outlined graphic marks (pending checks, empty segments). */
+    val stroke: Dp = 2.dp
+    val icon: Dp = 24.dp
+    val iconSmall: Dp = 20.dp
+    /** Minimum height; the bar grows if its labels need more room. */
     val bottomBarHeight: Dp = 64.dp
 }
 

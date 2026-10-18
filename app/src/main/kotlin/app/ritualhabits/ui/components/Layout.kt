@@ -32,8 +32,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import app.ritualhabits.ui.theme.Radii
 import app.ritualhabits.ui.theme.Ritual
 import app.ritualhabits.ui.theme.RitualType
@@ -61,8 +61,9 @@ fun ScreenColumn(
             Modifier
                 .widthIn(max = layout.contentMaxWidth)
                 .fillMaxSize()
-                .verticalScroll(rememberScrollState())
+                // Inset outside the scroll so content never slides under the status bar.
                 .windowInsetsPadding(WindowInsets.statusBars)
+                .verticalScroll(rememberScrollState())
                 .padding(horizontal = layout.gutter)
                 .padding(bottomInset)
                 .padding(top = Spacing.lg, bottom = Spacing.xxl),
@@ -72,8 +73,8 @@ fun ScreenColumn(
 }
 
 /**
- * Screen title block: optional overline (e.g. the date), large title, trailing actions.
- * The title is marked as a heading for TalkBack navigation.
+ * Masthead: a top row with the overline (e.g. the date) and actions, then a large title on its own
+ * line so long titles never compete with buttons. The title is a heading for TalkBack.
  */
 @Composable
 fun ScreenHeader(
@@ -82,20 +83,23 @@ fun ScreenHeader(
     overline: String? = null,
     actions: @Composable RowScope.() -> Unit = {},
 ) {
-    Row(modifier.fillMaxWidth(), verticalAlignment = Alignment.Bottom) {
-        Column(Modifier.weight(1f)) {
-            if (overline != null) {
-                Text(overline.uppercase(), style = RitualType.overline, color = Ritual.colors.textSecondary)
-                Spacer(Modifier.height(Spacing.xs))
-            }
+    Column(modifier.fillMaxWidth()) {
+        Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                title,
-                style = RitualType.title,
+                overline?.uppercase().orEmpty(),
+                style = RitualType.overline,
                 color = Ritual.colors.textPrimary,
-                modifier = Modifier.semantics { heading() },
+                modifier = Modifier.weight(1f),
             )
+            Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), content = actions)
         }
-        Row(horizontalArrangement = Arrangement.spacedBy(Spacing.xs), content = actions)
+        Spacer(Modifier.height(Spacing.sm))
+        Text(
+            title,
+            style = RitualType.title,
+            color = Ritual.colors.textPrimary,
+            modifier = Modifier.semantics { heading() },
+        )
     }
 }
 
@@ -105,7 +109,7 @@ fun SectionLabel(text: String, modifier: Modifier = Modifier) {
     Text(
         text.uppercase(),
         style = RitualType.overline,
-        color = Ritual.colors.textSecondary,
+        color = Ritual.colors.textPrimary,
         modifier = modifier
             .padding(bottom = Spacing.sm)
             .semantics { heading() },
@@ -169,7 +173,10 @@ fun ListRow(
     }
 }
 
-/** Deliberate empty state: quiet icon in a hairline circle, a title, one line of guidance, one action. */
+/**
+ * Editorial empty state: a small mark, a large left-aligned statement, one line of guidance and
+ * one strong action. No illustration, no card.
+ */
 @Composable
 fun EmptyState(
     icon: ImageVector,
@@ -178,24 +185,19 @@ fun EmptyState(
     modifier: Modifier = Modifier,
     action: (@Composable () -> Unit)? = null,
 ) {
-    Column(
-        modifier
-            .fillMaxWidth()
-            .padding(vertical = Spacing.xxxl, horizontal = Spacing.lg),
-        horizontalAlignment = Alignment.CenterHorizontally,
-    ) {
+    Column(modifier.fillMaxWidth().padding(top = Spacing.xxl, bottom = Spacing.xl)) {
         Box(
             Modifier
-                .size(56.dp)
-                .border(Sizes.hairline, Ritual.colors.borderStrong, CircleShape),
+                .size(44.dp)
+                .border(Sizes.stroke, Ritual.colors.textPrimary, CircleShape),
             contentAlignment = Alignment.Center,
         ) {
-            Icon(icon, contentDescription = null, tint = Ritual.colors.textSecondary, modifier = Modifier.size(Sizes.icon))
+            Icon(icon, contentDescription = null, tint = Ritual.colors.textPrimary, modifier = Modifier.size(Sizes.iconSmall))
         }
-        Spacer(Modifier.height(Spacing.lg))
-        Text(title, style = RitualType.heading, color = Ritual.colors.textPrimary, textAlign = TextAlign.Center)
-        Spacer(Modifier.height(Spacing.xs))
-        Text(body, style = RitualType.bodySmall, color = Ritual.colors.textSecondary, textAlign = TextAlign.Center)
+        Spacer(Modifier.height(Spacing.xl))
+        Text(title, style = RitualType.title.copy(fontSize = 36.sp, lineHeight = 38.sp), color = Ritual.colors.textPrimary)
+        Spacer(Modifier.height(Spacing.md))
+        Text(body, style = RitualType.body, color = Ritual.colors.textSecondary)
         if (action != null) {
             Spacer(Modifier.height(Spacing.xl))
             action()
