@@ -1,6 +1,6 @@
 package app.ritualhabits.ui
 
-import android.view.HapticFeedbackConstants
+import android.os.VibrationEffect
 import androidx.compose.ui.unit.dp
 import app.ritualhabits.core.model.ThemeMode
 import app.ritualhabits.ui.navigation.TopLevelDestination
@@ -11,6 +11,7 @@ import app.ritualhabits.ui.theme.LayoutMetrics
 import app.ritualhabits.ui.theme.LightColors
 import app.ritualhabits.ui.theme.RitualColors
 import app.ritualhabits.ui.theme.RitualHaptics
+import app.ritualhabits.ui.theme.SystemHaptics
 import app.ritualhabits.ui.theme.isDark
 import app.ritualhabits.ui.today.TodayHabit
 import app.ritualhabits.ui.today.TodayUiState
@@ -66,20 +67,19 @@ class DesignSystemTest {
     }
 
     @Test fun `haptics are silent when disabled`() {
-        val fired = mutableListOf<Int>()
+        val fired = mutableListOf<HapticEvent>()
         RitualHaptics(enabled = false, performer = { fired += it }).perform(HapticEvent.Confirm)
         assertEquals(emptyList(), fired)
-        RitualHaptics(enabled = true, performer = { fired += it }, sdkInt = 34).perform(HapticEvent.Confirm)
-        assertEquals(listOf(HapticFeedbackConstants.CONFIRM), fired)
+        RitualHaptics(enabled = true, performer = { fired += it }).perform(HapticEvent.Confirm)
+        assertEquals(listOf(HapticEvent.Confirm), fired)
     }
 
-    @Test fun `haptics fall back on older Android versions`() {
-        val old = RitualHaptics(enabled = true, performer = { }, sdkInt = 28)
-        assertEquals(HapticFeedbackConstants.VIRTUAL_KEY, old.constantFor(HapticEvent.Confirm))
-        assertEquals(HapticFeedbackConstants.CLOCK_TICK, old.constantFor(HapticEvent.Selection))
-        val new = RitualHaptics(enabled = true, performer = { }, sdkInt = 34)
-        assertEquals(HapticFeedbackConstants.TOGGLE_ON, new.constantFor(HapticEvent.ToggleOn))
-        assertEquals(HapticFeedbackConstants.SEGMENT_TICK, new.constantFor(HapticEvent.Selection))
+    @Test fun `haptics use effects every device implements`() {
+        assertEquals(VibrationEffect.EFFECT_CLICK, SystemHaptics.predefinedFor(HapticEvent.ToggleOn))
+        assertEquals(VibrationEffect.EFFECT_TICK, SystemHaptics.predefinedFor(HapticEvent.ToggleOff))
+        assertEquals(VibrationEffect.EFFECT_TICK, SystemHaptics.predefinedFor(HapticEvent.Selection))
+        assertEquals(VibrationEffect.EFFECT_HEAVY_CLICK, SystemHaptics.predefinedFor(HapticEvent.Confirm))
+        assertEquals(VibrationEffect.EFFECT_DOUBLE_CLICK, SystemHaptics.predefinedFor(HapticEvent.Reject))
     }
 
     @Test fun `layout breakpoints`() {

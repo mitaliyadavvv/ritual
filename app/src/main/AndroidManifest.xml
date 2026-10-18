@@ -6,6 +6,10 @@
     <!-- Back up waiting changes as soon as the connection returns. -->
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
+    <!-- Subtle touch haptics (install-time permission, no prompt). Still follows the system
+         "Touch feedback" setting and vibration intensity. -->
+    <uses-permission android:name="android.permission.VIBRATE" />
+
     <!-- "Focus session complete" notification (Android 13+ asks the user, the first time a session starts). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
     <!-- Lets the end-of-session alert arrive on time. Never requested with a prompt; if the system
