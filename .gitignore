@@ -19,6 +19,8 @@ keystore.properties
 *.p8
 secrets.properties
 google-services.json
+# Renamed downloads too (e.g. "Ritual Google Services.json")
+*[Gg]oogle*[Ss]ervices*.json
 /app/release/
 
 # Kotlin compiler session data

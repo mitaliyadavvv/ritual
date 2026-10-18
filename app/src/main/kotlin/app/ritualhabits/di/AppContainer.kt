@@ -17,6 +17,7 @@ import app.ritualhabits.data.reminders.AndroidReminderNotifier
 import app.ritualhabits.data.reminders.ReminderCoordinator
 import app.ritualhabits.data.repository.CompletionRepository
 import app.ritualhabits.data.repository.FocusRepository
+import app.ritualhabits.data.repository.FirstRunGate
 import app.ritualhabits.data.repository.HabitRepository
 import app.ritualhabits.data.repository.LocalDataManager
 import app.ritualhabits.data.repository.PreferencesRepository
@@ -44,6 +45,7 @@ class AppContainer(
     val focus by lazy { FocusRepository(database, clock) }
     val preferences by lazy { PreferencesRepository(appContext.settingsDataStore) }
     val localData by lazy { LocalDataManager(database, preferences) }
+    val firstRun by lazy { FirstRunGate(preferences, database) }
     val habitDay by lazy { HabitDayTracker(appContext, clock, appScope) }
     val focusAlarms: FocusAlarms by lazy { AndroidFocusAlarms(appContext) }
     val focusNotifier by lazy { AndroidFocusNotifier(appContext) }

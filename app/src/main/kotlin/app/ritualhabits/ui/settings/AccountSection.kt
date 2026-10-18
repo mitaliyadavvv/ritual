@@ -119,23 +119,7 @@ fun AccountSection(
     }
     Spacer(Modifier.height(Spacing.xxl))
 
-    if (account is AccountState.ChooseAccount) {
-        val previous = account.previousEmail ?: "another account"
-        val next = account.user.email ?: "this account"
-        val unsynced = when (account.unsyncedChanges) {
-            0 -> ""
-            1 -> " except 1 recent change that hasn't backed up, which will be lost"
-            else -> " except ${account.unsyncedChanges} recent changes that haven't backed up, which will be lost"
-        }
-        ConfirmDialog(
-            title = "Switch to $next?",
-            body = "This phone has habits from $previous. They're safe in that account$unsynced. " +
-                "Switching removes them from this phone and restores $next's habits instead.",
-            confirmLabel = "Switch",
-            onConfirm = { onChooseAccount(true) },
-            onDismiss = { onChooseAccount(false) },
-        )
-    }
+    if (account is AccountState.ChooseAccount) AccountSwitchDialog(account, onChooseAccount)
     if (confirmSignOut && account is AccountState.SignedIn) {
         val pending = account.sync.pending
         val note = when (pending) {
@@ -154,6 +138,26 @@ fun AccountSection(
             onDismiss = { confirmSignOut = false },
         )
     }
+}
+
+/** "Switch to …?" confirmation when the phone holds another account's data (Settings and sign-in screen). */
+@Composable
+fun AccountSwitchDialog(account: AccountState.ChooseAccount, onChooseAccount: (Boolean) -> Unit) {
+    val previous = account.previousEmail ?: "another account"
+    val next = account.user.email ?: "this account"
+    val unsynced = when (account.unsyncedChanges) {
+        0 -> ""
+        1 -> " except 1 recent change that hasn't backed up, which will be lost"
+        else -> " except ${account.unsyncedChanges} recent changes that haven't backed up, which will be lost"
+    }
+    ConfirmDialog(
+        title = "Switch to $next?",
+        body = "This phone has habits from $previous. They're safe in that account$unsynced. " +
+            "Switching removes them from this phone and restores $next's habits instead.",
+        confirmLabel = "Switch",
+        onConfirm = { onChooseAccount(true) },
+        onDismiss = { onChooseAccount(false) },
+    )
 }
 
 /** The "Your data" line under About. */

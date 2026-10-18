@@ -8,15 +8,18 @@ import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.viewModels
+import androidx.compose.animation.Crossfade
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.getValue
 import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
 import androidx.lifecycle.compose.collectAsStateWithLifecycle
+import app.ritualhabits.data.repository.FirstRunStage
 import app.ritualhabits.ui.AppViewModel
 import app.ritualhabits.ui.RitualViewModels
 import app.ritualhabits.ui.navigation.RitualAppRoot
 import app.ritualhabits.ui.navigation.TopLevelDestination
+import app.ritualhabits.ui.onboarding.WelcomeFlow
 import kotlinx.coroutines.flow.MutableStateFlow
 import app.ritualhabits.ui.theme.RitualTheme
 import app.ritualhabits.ui.theme.isDark
@@ -28,7 +31,7 @@ class MainActivity : ComponentActivity() {
     private val requestedTab = MutableStateFlow<TopLevelDestination?>(null)
 
     override fun onCreate(savedInstanceState: Bundle?) {
-        // Hold the splash until the saved theme is known, so the wrong theme never flashes.
+        // Hold the splash until the saved theme and first-run state are known, so neither flashes.
         installSplashScreen().setKeepOnScreenCondition { !appViewModel.uiState.value.loaded }
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -46,8 +49,16 @@ class MainActivity : ComponentActivity() {
             }
 
             RitualTheme(themeMode = state.themeMode, hapticsEnabled = state.hapticsEnabled) {
-                val openTab by requestedTab.collectAsStateWithLifecycle()
-                RitualAppRoot(openTab = openTab, onOpenTabHandled = { requestedTab.value = null })
+                // Nothing until the first-run stage is known (the splash covers it), so the app never
+                // flashes before onboarding. First launch only: onboarding and sign-in, then the app.
+                if (state.loaded) Crossfade(state.firstRun == FirstRunStage.DONE, label = "entry") { inApp ->
+                    if (inApp) {
+                        val openTab by requestedTab.collectAsStateWithLifecycle()
+                        RitualAppRoot(openTab = openTab, onOpenTabHandled = { requestedTab.value = null })
+                    } else {
+                        WelcomeFlow(state.firstRun)
+                    }
+                }
             }
         }
     }

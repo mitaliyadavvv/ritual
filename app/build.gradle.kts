@@ -98,7 +98,7 @@ android {
             // Compose UI tests need the debug-only ui-test-manifest host activity; the migration test
             // needs the debug-only schema assets.
             if (test.name == "testReleaseUnitTest") {
-                test.exclude("**/NavigationUiTest*", "**/TodayJourneyTest*", "**/ManageJourneyTest*", "**/ReminderMigrationTest*", "**/SyncMigrationTest*")
+                test.exclude("**/NavigationUiTest*", "**/TodayJourneyTest*", "**/ManageJourneyTest*", "**/ReminderMigrationTest*", "**/SyncMigrationTest*", "**/OnboardingUiTest*")
             }
         }
     }

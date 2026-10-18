@@ -37,6 +37,8 @@ class PreferencesRepository(
         val themeMode = stringPreferencesKey("theme_mode")
         val haptics = booleanPreferencesKey("haptics_enabled")
         val notificationAsked = booleanPreferencesKey("notification_permission_requested")
+        /** Where a first launch got to: onboarding → sign-in → done (see [FirstRunGate]). */
+        val firstRunStage = stringPreferencesKey("first_run_stage")
         /** When theme or haptics last changed (cloud backup: last writer wins). */
         val syncedChangedAt = longPreferencesKey("synced_preferences_changed_at")
     }
@@ -64,6 +66,17 @@ class PreferencesRepository(
     }
     suspend fun markNotificationPermissionRequested() = dataStore.edit { it[Keys.notificationAsked] = true }
     suspend fun clear() = dataStore.edit { it.clear() }
+
+    /** null until decided; never reset by sign-out or account changes. */
+    val firstRunStage: Flow<FirstRunStage?> = dataStore.data
+        .catch { if (it is IOException) emit(emptyPreferences()) else throw it }
+        .map { p -> p[Keys.firstRunStage]?.let { v -> FirstRunStage.entries.firstOrNull { it.name == v } } }
+
+    suspend fun setFirstRunStage(stage: FirstRunStage) = dataStore.edit { it[Keys.firstRunStage] = stage.name }
+
+    /** True if anything was ever saved here: a sign of an installation that predates onboarding. */
+    suspend fun hasStoredValues(): Boolean =
+        runCatching { dataStore.data.first().asMap().keys.any { it != Keys.firstRunStage } }.getOrDefault(false)
 
     suspend fun syncedPreferences(): SyncedPreferences {
         val p = runCatching { dataStore.data.first() }.getOrElse { emptyPreferences() }
