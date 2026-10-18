@@ -35,7 +35,7 @@ object RitualViewModels {
     val Factory = viewModelFactory {
         initializer { AppViewModel(container().preferences) }
         initializer { SettingsViewModel(container().preferences) }
-        initializer { TodayViewModel(container().habitDay.today) }
+        initializer { container().run { TodayViewModel(habits, completions, habitDay.today) } }
     }
 
     private fun CreationExtras.container(): AppContainer = (this[APPLICATION_KEY] as RitualApp).container
