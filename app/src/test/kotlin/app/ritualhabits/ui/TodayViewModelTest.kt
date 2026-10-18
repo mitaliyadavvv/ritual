@@ -198,6 +198,7 @@ class TodayViewModelTest {
         vm.ready()
         vm.add("Read")
         vm.toggle(vm.ready { it.total == 1 }.habits.single().id); vm.nextEvent() // day -2: complete
+        vm.ready { it.allDone } // let Room deliver the completion before the day changes
         clock.advanceBy(24.hours); today.value = clock.today()                // day -1: missed
         clock.advanceBy(24.hours); today.value = clock.today()                // today: pending
 
