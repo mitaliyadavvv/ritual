@@ -38,6 +38,9 @@ class HabitRepository(
     fun observeArchived(): Flow<List<HabitEntity>> = habitDao.observeArchived()
     fun observeAll(): Flow<List<HabitEntity>> = habitDao.observeAll()
 
+    /** Any habit by id, including archived and deleted ones (for labelling history). */
+    suspend fun get(id: String): HabitEntity? = habitDao.get(id)
+
     /** Everything streaks and analytics are derived from. */
     fun observeHistory(): Flow<HabitHistory> =
         combine(periodDao.observeAll(), completionDao.observeAll()) { periods, completions ->

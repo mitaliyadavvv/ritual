@@ -20,3 +20,6 @@ keystore.properties
 secrets.properties
 google-services.json
 /app/release/
+
+# Kotlin compiler session data
+.kotlin/

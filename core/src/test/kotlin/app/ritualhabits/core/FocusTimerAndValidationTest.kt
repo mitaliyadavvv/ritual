@@ -48,6 +48,17 @@ class FocusTimerTest {
         assertEquals(s.endsAt, done.finishedAt)
     }
 
+    @Test fun `every preset starts a session of that length, default is 25 minutes`() {
+        assertEquals(listOf(10, 15, 25, 30, 45, 60), FocusTimer.PRESETS.map { it.inWholeMinutes.toInt() })
+        assertEquals(25.minutes, FocusTimer.DEFAULT_DURATION)
+        for (preset in FocusTimer.PRESETS) {
+            val s = FocusTimer.start("s", "h", preset, t0)
+            assertEquals(t0 + preset, s.endsAt)
+            assertEquals(preset, FocusTimer.remaining(s, t0))
+            assertTrue(FocusTimer.isDue(s, t0 + preset))
+        }
+    }
+
     @Test fun `cancel never sets a completion date`() {
         val s = FocusTimer.cancel(FocusTimer.start("s", "h", 15.minutes, t0), t0 + 1.minutes)
         assertEquals(FocusStatus.CANCELLED, s.status)

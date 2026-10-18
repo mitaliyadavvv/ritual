@@ -14,6 +14,14 @@ import kotlinx.coroutines.flow.map
 import java.util.UUID
 import kotlin.time.Duration
 
+/** What a completed session did to the habit. */
+enum class FocusOutcome {
+    /** The habit has a completion for the day the session ended (this session's, or an earlier one). */
+    MARKED_DONE,
+    /** The habit wasn't due that day (archived, deleted or not yet created), so nothing was recorded. */
+    NOT_DUE,
+}
+
 sealed interface FocusStartResult {
     data class Started(val session: FocusSession) : FocusStartResult
     data object AlreadyActive : FocusStartResult
@@ -52,6 +60,18 @@ class FocusRepository(
         val session = focusDao.get(id)?.toModel() ?: return@withTransaction null
         if (!session.isActive) return@withTransaction session
         FocusTimer.cancel(session, clock.now()).also { focusDao.update(FocusSessionEntity.from(it)) }
+    }
+
+    suspend fun get(id: String): FocusSession? = focusDao.get(id)?.toModel()
+
+    /** Running or paused sessions (at most one), e.g. to re-arm alarms after a reboot. */
+    suspend fun activeSessions(): List<FocusSession> = focusDao.active().map { it.toModel() }
+
+    /** For a COMPLETED session: whether its habit ended up done for the day the session ended. */
+    suspend fun outcome(session: FocusSession): FocusOutcome? {
+        val date = session.completionDate ?: return null
+        if (session.status != FocusStatus.COMPLETED) return null
+        return if (completionDao.get(session.habitId, date) != null) FocusOutcome.MARKED_DONE else FocusOutcome.NOT_DUE
     }
 
     /** User dismissed the "Session complete" state. */

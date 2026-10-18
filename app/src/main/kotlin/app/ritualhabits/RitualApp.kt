@@ -11,5 +11,6 @@ class RitualApp : Application() {
         super.onCreate()
         container = AppContainer(this)
         container.habitDay.install()
+        container.focusNotifier.createChannel()
     }
 }

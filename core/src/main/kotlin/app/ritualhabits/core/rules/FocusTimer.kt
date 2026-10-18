@@ -15,7 +15,8 @@ import kotlin.time.Duration.Companion.minutes
  */
 object FocusTimer {
 
-    val PRESETS: List<Duration> = listOf(15.minutes, 25.minutes, 45.minutes, 60.minutes)
+    val PRESETS: List<Duration> = listOf(10.minutes, 15.minutes, 25.minutes, 30.minutes, 45.minutes, 60.minutes)
+    val DEFAULT_DURATION: Duration = 25.minutes
     private val MAX_DURATION = 3.hours
 
     fun start(id: String, habitId: String, duration: Duration, now: Instant): FocusSession {

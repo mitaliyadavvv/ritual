@@ -19,6 +19,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.navigationBars
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.setValue
 import androidx.compose.runtime.remember
@@ -41,8 +42,9 @@ import app.ritualhabits.ui.components.RitualIconButton
 import app.ritualhabits.ui.components.RitualIcons
 import app.ritualhabits.ui.components.ScreenColumn
 import app.ritualhabits.ui.components.ScreenHeader
-import app.ritualhabits.ui.focus.FocusPlaceholder
+import app.ritualhabits.ui.focus.FocusRoute
 import app.ritualhabits.ui.manage.ManageRoute
+import app.ritualhabits.ui.progress.ProgressRoute
 import app.ritualhabits.ui.settings.SettingsRoute
 import app.ritualhabits.ui.theme.Ritual
 import app.ritualhabits.ui.theme.Sizes
@@ -54,10 +56,22 @@ import app.ritualhabits.ui.today.TodayRoute
  * Tab switches cross-fade; Settings slides in. Each tab keeps its own back stack and scroll state.
  */
 @Composable
-fun RitualAppRoot(navController: NavHostController = rememberNavController()) {
+fun RitualAppRoot(
+    navController: NavHostController = rememberNavController(),
+    openTab: TopLevelDestination? = null,
+    onOpenTabHandled: () -> Unit = {},
+) {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val currentTab = TopLevelDestination.fromRoute(backStackEntry?.destination?.route)
     val motion = Ritual.motion
+
+    // Requests from outside the app (e.g. tapping the focus-complete notification).
+    LaunchedEffect(openTab) {
+        if (openTab != null) {
+            navController.navigateToTab(openTab)
+            onOpenTabHandled()
+        }
+    }
 
     // Space reserved under scrolling content so the floating bar never covers it. The bar grows
     // with the user's font size, so its measured height is used once known.
@@ -92,13 +106,18 @@ fun RitualAppRoot(navController: NavHostController = rememberNavController()) {
                 TodayRoute(tabBottomInset, onOpenSettings = { navController.navigate(Routes.SETTINGS) })
             }
             composable(TopLevelDestination.PROGRESS.route) {
-                TabPlaceholder(
-                    TopLevelDestination.PROGRESS, tabBottomInset, { navController.navigate(Routes.SETTINGS) },
-                    title = "Your progress", body = "Streaks, completion rates and history will appear here in a later update.",
+                ProgressRoute(
+                    tabBottomInset,
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                    onOpenManage = { navController.navigateToTab(TopLevelDestination.MANAGE) },
                 )
             }
             composable(TopLevelDestination.FOCUS.route) {
-                FocusPlaceholder(tabBottomInset, onOpenSettings = { navController.navigate(Routes.SETTINGS) })
+                FocusRoute(
+                    tabBottomInset,
+                    onOpenSettings = { navController.navigate(Routes.SETTINGS) },
+                    onOpenManage = { navController.navigateToTab(TopLevelDestination.MANAGE) },
+                )
             }
             composable(TopLevelDestination.MANAGE.route) {
                 ManageRoute(tabBottomInset, onOpenSettings = { navController.navigate(Routes.SETTINGS) })
@@ -143,20 +162,4 @@ fun NavHostController.navigateToTab(tab: TopLevelDestination) {
 @Composable
 fun SettingsButton(onClick: () -> Unit) {
     RitualIconButton(RitualIcons.Settings, contentDescription = "Settings", onClick = onClick)
-}
-
-/** Header + deliberate empty state for tabs whose features arrive in Stage 4. */
-@Composable
-private fun TabPlaceholder(
-    tab: TopLevelDestination,
-    bottomInset: PaddingValues,
-    onOpenSettings: () -> Unit,
-    title: String,
-    body: String,
-) {
-    ScreenColumn(bottomInset) {
-        ScreenHeader(title = tab.label, actions = { SettingsButton(onOpenSettings) })
-        Spacer(Modifier.height(Spacing.xl))
-        EmptyState(icon = tab.icon, title = title, body = body)
-    }
 }

@@ -151,9 +151,20 @@ fun WeekDots(days: List<DotDay>, modifier: Modifier = Modifier) {
  * establishes how the countdown will look once timed sessions are built.
  */
 @Composable
-fun TimerDial(progress: Float, time: String, modifier: Modifier = Modifier, caption: String? = null, size: Dp = 260.dp) {
+fun TimerDial(
+    progress: Float,
+    time: String,
+    modifier: Modifier = Modifier,
+    caption: String? = null,
+    size: Dp = 260.dp,
+    center: (@Composable () -> Unit)? = null,
+) {
     val c = Ritual.colors
     ProgressRing(progress, modifier, size = size, strokeWidth = 6.dp) {
+        if (center != null) {
+            center()
+            return@ProgressRing
+        }
         Column(horizontalAlignment = Alignment.CenterHorizontally) {
             Text(time, style = RitualType.display, color = c.textPrimary, maxLines = 1)
             if (caption != null) {

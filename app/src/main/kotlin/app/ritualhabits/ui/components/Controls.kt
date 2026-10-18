@@ -35,6 +35,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.scale
 import androidx.compose.ui.draw.shadow
@@ -115,15 +116,18 @@ fun RitualIconButton(
     onClick: () -> Unit,
     modifier: Modifier = Modifier,
     outlined: Boolean = true,
+    enabled: Boolean = true,
 ) {
     val interaction = remember { MutableInteractionSource() }
     Box(
         modifier = modifier
             .size(Sizes.minTouchTarget)
+            .alpha(if (enabled) 1f else 0.3f)
             .clip(CircleShape)
             .clickable(
                 interactionSource = interaction,
                 indication = ripple(color = Ritual.colors.textPrimary),
+                enabled = enabled,
                 onClick = onClick,
             )
             .semantics {

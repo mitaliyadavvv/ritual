@@ -18,6 +18,9 @@ class HabitHistory(
 
     val firstTrackedDate: LocalDate? = periods.minOfOrNull { it.startDate }
 
+    /** Every habit that has ever been due, including archived and deleted ones. */
+    val habitIds: Set<String> get() = periodsByHabit.keys
+
     fun firstTrackedDate(habitId: String): LocalDate? = periodsByHabit[habitId]?.minOfOrNull { it.startDate }
 
     fun isEligible(habitId: String, date: LocalDate): Boolean =

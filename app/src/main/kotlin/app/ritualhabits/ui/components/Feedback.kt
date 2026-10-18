@@ -94,6 +94,7 @@ fun ConfirmDialog(
     confirmLabel: String,
     onConfirm: () -> Unit,
     onDismiss: () -> Unit,
+    dismissLabel: String = "Cancel",
 ) {
     AlertDialog(
         onDismissRequest = onDismiss,
@@ -105,7 +106,7 @@ fun ConfirmDialog(
         title = { Text(title, style = RitualType.heading) },
         text = { Text(body, style = RitualType.bodySmall) },
         confirmButton = { PrimaryButton(confirmLabel, onClick = onConfirm) },
-        dismissButton = { SecondaryButton("Cancel", onClick = onDismiss) },
+        dismissButton = { SecondaryButton(dismissLabel, onClick = onDismiss) },
     )
 }
 

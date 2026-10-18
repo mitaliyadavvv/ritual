@@ -49,6 +49,8 @@ object RitualIcons {
         }
     }
     val Back: ImageVector by lazy { icon("back") { moveTo(15f, 5f); lineTo(8f, 12f); lineTo(15f, 19f) } }
+    val Forward: ImageVector by lazy { icon("forward") { moveTo(9f, 5f); lineTo(16f, 12f); lineTo(9f, 19f) } }
+    val ChevronDown: ImageVector by lazy { icon("chevron_down") { moveTo(6f, 9.5f); lineTo(12f, 15.5f); lineTo(18f, 9.5f) } }
     val Add: ImageVector by lazy { icon("add") { moveTo(12f, 5f); lineTo(12f, 19f); moveTo(5f, 12f); lineTo(19f, 12f) } }
     val More: ImageVector by lazy { icon("more") { circle(5.5f, 12f, 0.9f); circle(12f, 12f, 0.9f); circle(18.5f, 12f, 0.9f) } }
     val ArrowUp: ImageVector by lazy { icon("arrow_up") { moveTo(12f, 19f); lineTo(12f, 5f); moveTo(6f, 11f); lineTo(12f, 5f); lineTo(18f, 11f) } }

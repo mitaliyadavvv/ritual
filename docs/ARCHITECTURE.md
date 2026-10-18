@@ -270,35 +270,42 @@ No freezes, grace days or other gamification.
 
 ---
 
-## 8. Notifications
+## 8. Notifications and alarms (implemented in Stage 6)
 
 | Situation | Behaviour |
 |---|---|
-| Session running, app in background | Silent ongoing notification with a **system-rendered countdown** (`setUsesChronometer` + `setChronometerCountDown`). No service, no wake-ups |
-| Session ends, app in background | Alarm fires → receiver runs reconcile (`goAsync`) → posts *"Session complete · <habit> marked done"* on the `focus_complete` channel (default importance) |
-| Session ends, app in foreground | No notification. The UI shows the completion state with a haptic |
-| Paused / cancelled / completed | Ongoing notification removed, alarm cancelled |
-| Device reboot | `BOOT_COMPLETED` receiver reconciles and re-schedules the alarm for any RUNNING session |
+| Session running | `AlarmManager` alarm at `ends_at` (`FocusAlarms`). Exact (`setExactAndAllowWhileIdle`) if the user allowed exact alarms, otherwise `setAndAllowWhileIdle` (Android 14+ default; delivery may be several minutes late) |
+| Alarm fires, app in background | `FocusAlarmReceiver` → `FocusCompletionHandler.onAlarm()` reconciles (exactly once) and posts "Focus session complete" naming the habit and the outcome. Tapping it opens Ritual on the Focus tab |
+| Alarm fires, app in foreground | Reconciles; no notification (the Focus screen shows the result and plays the confirm haptic) |
+| Pause / cancel / completion seen by the screen | Alarm cancelled. Resume re-arms it with the new end time |
+| Returning to Focus | Reconcile, then re-arm a running session's alarm (so it becomes exact if precise alerts were just allowed) |
+| Reboot or app update | `FocusBootReceiver` reconciles, then re-arms running sessions |
 
-**Why no foreground service:** the data never depends on code running at the end time. Reconcile is
-correct whenever it runs, because it derives everything from `ends_at`. The alarm only exists to *tell*
-the user. A foreground service would need a special-use declaration on Android 14+ and adds no correctness.
+**Why no foreground service:** correctness never depends on code running at the end time. Every
+entry point reconciles from the stored `ends_at`. The alarm only *tells* the user.
 
-**Alarm precision:** use `setExactAndAllowWhileIdle` when `canScheduleExactAlarms()` is true, otherwise
-`setAndAllowWhileIdle` (may be delayed by Doze). Even a late alarm records the correct day.
-
-**Permissions (added in the Focus stage):**
-| Permission | Why | Handling |
+**Permissions:**
+| Permission | Use | Handling |
 |---|---|---|
-| `POST_NOTIFICATIONS` (API 33+) | ongoing + completion notifications | requested once, in context, the first time the user starts a session. If denied, the timer works fully and Focus shows a quiet "Notifications are off" row linking to settings |
-| `SCHEDULE_EXACT_ALARM` | on-time completion alert | never prompted automatically. A Settings row "Precise timer alerts" opens the system page. Falls back to inexact |
-| `RECEIVE_BOOT_COMPLETED` | re-arm alarm after reboot | normal permission, no prompt |
+| `POST_NOTIFICATIONS` | completion notification | asked once, on the first Start, after a short in-app explanation ("Continue" / "Not now"). If denied, the timer works fully and Focus shows a quiet note with a link to settings |
+| `SCHEDULE_EXACT_ALARM` | on-time alert | never prompted automatically. When not allowed, Focus shows "may arrive a few minutes late · Allow precise alerts", which opens the system page |
+| `RECEIVE_BOOT_COMPLETED` | re-arm after reboot | normal permission |
 
-Not used: `INTERNET`, `USE_EXACT_ALARM`, `FOREGROUND_SERVICE*`, `VIBRATE` (Compose/View haptics need none).
+Not used: `INTERNET`, `USE_EXACT_ALARM`, `FOREGROUND_SERVICE*`, `WAKE_LOCK`. Not built: the ongoing
+countdown notification sketched in Stage 2 (the system's notification shows only the end).
 
-Channels: `focus_running` (low importance, silent) and `focus_complete` (default). Monochrome small icon.
-
----
+## 8a. Progress (implemented in Stage 6)
+`core/rules/ProgressCalculator` builds the month and habit views from `HabitHistory`, the same
+eligibility periods, completions and "all due habits done" rule used for streaks.
+- Day: COMPLETE (= qualifies for the streak), PARTIAL (finished day, some done), MISSED (finished
+  day, none done), IN_PROGRESS (today, not complete; never "missed"), NOTHING_DUE (no habit was
+  due; neither success nor miss), FUTURE.
+- Habit day: DONE, MISSED, PENDING (today), NOT_DUE (before creation, archived gap, after deletion;
+  never a miss), FUTURE.
+- Monthly completion rate = done slots ÷ due slots over days that have occurred (today included).
+  Complete days count days ≤ today; partial days count finished days only.
+- Archived and deleted habits stay in the month they were due, with their history, labelled.
+- Navigation runs from the first tracked month to the current month. No schema change was needed.
 
 ## 9. Validation
 
