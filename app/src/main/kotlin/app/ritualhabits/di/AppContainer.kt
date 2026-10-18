@@ -12,6 +12,9 @@ import app.ritualhabits.data.focus.AndroidFocusNotifier
 import app.ritualhabits.data.focus.FocusAlarms
 import app.ritualhabits.data.focus.FocusCompletionHandler
 import app.ritualhabits.data.local.RitualDatabase
+import app.ritualhabits.data.reminders.AndroidReminderAlarms
+import app.ritualhabits.data.reminders.AndroidReminderNotifier
+import app.ritualhabits.data.reminders.ReminderCoordinator
 import app.ritualhabits.data.repository.CompletionRepository
 import app.ritualhabits.data.repository.FocusRepository
 import app.ritualhabits.data.repository.HabitRepository
@@ -39,6 +42,8 @@ class AppContainer(
     val habitDay by lazy { HabitDayTracker(appContext, clock, appScope) }
     val focusAlarms: FocusAlarms by lazy { AndroidFocusAlarms(appContext) }
     val focusNotifier by lazy { AndroidFocusNotifier(appContext) }
+    val reminderNotifier by lazy { AndroidReminderNotifier(appContext) }
+    val reminders by lazy { ReminderCoordinator(habits, AndroidReminderAlarms(appContext), reminderNotifier, clock) }
     val focusCompletion by lazy {
         FocusCompletionHandler(focus, habits, focusAlarms, focusNotifier) {
             ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)

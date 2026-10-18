@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.DateTimeUnit
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlinx.datetime.minus
 
 data class TodayHabit(
@@ -145,12 +146,16 @@ class TodayViewModel(
 
     fun onDescriptionChange(description: String) = _addHabit.update { it?.copy(description = description, error = null) }
 
+    fun onReminderEnabledChange(enabled: Boolean) = _addHabit.update { it?.copy(reminderEnabled = enabled) }
+
+    fun onReminderTimeChange(time: LocalTime) = _addHabit.update { it?.copy(reminderTime = time) }
+
     fun saveHabit() {
         val form = _addHabit.value ?: return
         if (form.saving) return
         _addHabit.value = form.copy(saving = true)
         viewModelScope.launch {
-            when (val result = habits.create(form.name, form.description)) {
+            when (val result = habits.create(form.name, form.description, form.reminder)) {
                 is HabitWriteResult.Success -> {
                     _addHabit.value = null
                     _events.send(TodayEvent.Haptic(HapticEvent.Confirm))

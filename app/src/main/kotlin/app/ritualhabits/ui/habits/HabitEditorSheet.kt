@@ -1,5 +1,44 @@
 package app.ritualhabits.ui.habits
 
+import android.Manifest
+import android.content.Context
+import android.content.Intent
+import android.content.pm.PackageManager
+import android.os.Build
+import android.provider.Settings
+import android.text.format.DateFormat
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.animation.AnimatedVisibility
+import androidx.compose.animation.expandVertically
+import androidx.compose.animation.fadeIn
+import androidx.compose.animation.fadeOut
+import androidx.compose.animation.shrinkVertically
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.selection.toggleable
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.TimePicker
+import androidx.compose.material3.TimePickerDefaults
+import androidx.compose.material3.rememberTimePickerState
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.setValue
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.semantics.Role
+import androidx.core.app.NotificationManagerCompat
+import androidx.core.content.ContextCompat
+import androidx.lifecycle.compose.LifecycleResumeEffect
+import app.ritualhabits.core.rules.ReminderSchedule
+import app.ritualhabits.data.repository.ReminderSetting
+import app.ritualhabits.ui.components.RitualSwitch
+import app.ritualhabits.ui.components.SecondaryButton
+import app.ritualhabits.ui.theme.HapticEvent
+import java.time.format.DateTimeFormatter
+import java.util.Locale
+import kotlinx.datetime.LocalTime
+import kotlinx.datetime.toJavaLocalTime
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.PaddingValues
@@ -56,9 +95,19 @@ data class HabitFormState(
     val description: String = "",
     val error: HabitInputError? = null,
     val saving: Boolean = false,
+    /** Daily reminder. Off by default; switching it on starts at 9:00 AM. */
+    val reminderEnabled: Boolean = false,
+    val reminderTime: LocalTime = ReminderSchedule.DEFAULT_TIME,
 ) {
     val canSave: Boolean get() = name.isNotBlank() && !saving
+
+    /** The reminder to save with the habit. */
+    val reminder: ReminderSetting get() = ReminderSetting(reminderEnabled, reminderTime)
 }
+
+/** "9:00 AM" or "09:00", following the device's 12/24-hour setting. */
+fun formatReminderTime(time: LocalTime, is24Hour: Boolean, locale: Locale = Locale.getDefault()): String =
+    DateTimeFormatter.ofPattern(if (is24Hour) "HH:mm" else "h:mm a", locale).format(time.toJavaLocalTime())
 
 /** User-facing copy for validation errors. Rules themselves live in core's HabitValidation. */
 fun HabitInputError.message(): String = when (this) {
@@ -83,6 +132,8 @@ fun HabitEditorSheet(
     onDescriptionChange: (String) -> Unit,
     onSave: () -> Unit,
     onDismiss: () -> Unit,
+    onReminderEnabledChange: (Boolean) -> Unit = {},
+    onReminderTimeChange: (LocalTime) -> Unit = {},
 ) {
     val c = Ritual.colors
     val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
@@ -159,6 +210,8 @@ fun HabitEditorSheet(
                 }
                 FormFootnote(state)
                 Spacer(Modifier.height(Spacing.xl))
+                ReminderSection(state, onReminderEnabledChange, onReminderTimeChange)
+                Spacer(Modifier.height(Spacing.xl))
                 PrimaryButton(confirmLabel, onClick = onSave, enabled = state.canSave, modifier = Modifier.fillMaxWidth())
             }
         }
@@ -206,4 +259,150 @@ private fun fieldColors() = Ritual.colors.let { c ->
         cursorColor = c.textPrimary,
         errorCursorColor = c.textPrimary,
     )
+}
+
+/**
+ * Daily reminder: a switch, and when on, the time (opens the time picker). Turning it on is when
+ * Ritual asks for notification permission (Android 13+); if notifications are off, a note says so.
+ */
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun ReminderSection(
+    state: HabitFormState,
+    onEnabledChange: (Boolean) -> Unit,
+    onTimeChange: (LocalTime) -> Unit,
+) {
+    val c = Ritual.colors
+    val context = LocalContext.current
+    val haptics = Ritual.haptics
+    val is24Hour = DateFormat.is24HourFormat(context)
+    var picking by remember { mutableStateOf(false) }
+    var notificationsOn by remember { mutableStateOf(notificationsAllowed(context)) }
+    val permission = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
+        notificationsOn = notificationsAllowed(context)
+    }
+    LifecycleResumeEffect(Unit) {
+        notificationsOn = notificationsAllowed(context)
+        onPauseOrDispose { }
+    }
+
+    Text(
+        "Reminder",
+        style = RitualType.overline,
+        color = c.textSecondary,
+        modifier = Modifier.padding(start = Spacing.lg, bottom = Spacing.sm).semantics { heading() },
+    )
+    Module(contentPadding = PaddingValues(0.dp)) {
+        Row(
+            Modifier
+                .fillMaxWidth()
+                .heightIn(min = 56.dp)
+                .toggleable(value = state.reminderEnabled, role = Role.Switch) { enabled ->
+                    haptics.perform(if (enabled) HapticEvent.ToggleOn else HapticEvent.ToggleOff)
+                    onEnabledChange(enabled)
+                    if (enabled && Build.VERSION.SDK_INT >= 33 && !notificationsAllowed(context)) {
+                        permission.launch(Manifest.permission.POST_NOTIFICATIONS)
+                    }
+                }
+                .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
+            verticalAlignment = Alignment.CenterVertically,
+        ) {
+            Column(Modifier.weight(1f)) {
+                Text("Daily reminder", style = RitualType.rowTitle, color = c.textPrimary)
+                Text("A gentle nudge if it isn't done yet.", style = RitualType.caption.copy(fontFeatureSettings = null), color = c.textSecondary)
+            }
+            RitualSwitch(checked = state.reminderEnabled, onCheckedChange = null)
+        }
+        AnimatedVisibility(
+            visible = state.reminderEnabled,
+            enter = fadeIn(Ritual.motion.quick()) + expandVertically(Ritual.motion.standard()),
+            exit = fadeOut(Ritual.motion.exit()) + shrinkVertically(Ritual.motion.standard()),
+        ) {
+            Column {
+                Hairline(startIndent = Spacing.lg)
+                Row(
+                    Modifier
+                        .fillMaxWidth()
+                        .heightIn(min = 56.dp)
+                        .clickable(role = Role.Button, onClickLabel = "Change reminder time") { picking = true }
+                        .padding(horizontal = Spacing.lg, vertical = Spacing.sm),
+                    verticalAlignment = Alignment.CenterVertically,
+                ) {
+                    Text("Time", style = RitualType.rowTitle, color = c.textPrimary, modifier = Modifier.weight(1f))
+                    Text(
+                        formatReminderTime(state.reminderTime, is24Hour),
+                        style = RitualType.value,
+                        color = c.textPrimary,
+                        modifier = Modifier
+                            .clip(RoundedCornerShape(Radii.sm))
+                            .background(c.fill)
+                            .padding(horizontal = Spacing.md, vertical = Spacing.xs),
+                    )
+                }
+            }
+        }
+    }
+    if (state.reminderEnabled && !notificationsOn) {
+        Row(Modifier.padding(start = Spacing.lg, top = Spacing.xs), verticalAlignment = Alignment.CenterVertically) {
+            Text(
+                "Notifications are off for Ritual, so this reminder can't appear.",
+                style = RitualType.caption.copy(fontFeatureSettings = null),
+                color = c.textSecondary,
+                modifier = Modifier.weight(1f).semantics { liveRegion = LiveRegionMode.Polite },
+            )
+            TextButton(
+                onClick = {
+                    context.startActivity(
+                        Intent(Settings.ACTION_APP_NOTIFICATION_SETTINGS).putExtra(Settings.EXTRA_APP_PACKAGE, context.packageName),
+                    )
+                },
+                modifier = Modifier.heightIn(min = 48.dp),
+            ) { Text("Settings", style = RitualType.label, color = c.textPrimary) }
+        }
+    }
+
+    if (picking) {
+        val pickerState = rememberTimePickerState(state.reminderTime.hour, state.reminderTime.minute, is24Hour)
+        AlertDialog(
+            onDismissRequest = { picking = false },
+            containerColor = c.surface,
+            shape = RoundedCornerShape(Radii.xl),
+            tonalElevation = 0.dp,
+            title = { Text("Reminder time", style = RitualType.heading, color = c.textPrimary) },
+            text = {
+                TimePicker(
+                    state = pickerState,
+                    colors = TimePickerDefaults.colors(
+                        clockDialColor = c.fill,
+                        clockDialSelectedContentColor = c.onAccent,
+                        clockDialUnselectedContentColor = c.textPrimary,
+                        selectorColor = c.accent,
+                        containerColor = c.surface,
+                        periodSelectorBorderColor = c.borderStrong,
+                        periodSelectorSelectedContainerColor = c.accent,
+                        periodSelectorUnselectedContainerColor = c.surface,
+                        periodSelectorSelectedContentColor = c.onAccent,
+                        periodSelectorUnselectedContentColor = c.textPrimary,
+                        timeSelectorSelectedContainerColor = c.accent,
+                        timeSelectorUnselectedContainerColor = c.fill,
+                        timeSelectorSelectedContentColor = c.onAccent,
+                        timeSelectorUnselectedContentColor = c.textPrimary,
+                    ),
+                )
+            },
+            confirmButton = {
+                PrimaryButton("Done", onClick = {
+                    onTimeChange(LocalTime(pickerState.hour, pickerState.minute))
+                    picking = false
+                })
+            },
+            dismissButton = { SecondaryButton("Cancel", onClick = { picking = false }) },
+        )
+    }
+}
+
+private fun notificationsAllowed(context: Context): Boolean {
+    val granted = Build.VERSION.SDK_INT < 33 ||
+        ContextCompat.checkSelfPermission(context, Manifest.permission.POST_NOTIFICATIONS) == PackageManager.PERMISSION_GRANTED
+    return granted && NotificationManagerCompat.from(context).areNotificationsEnabled()
 }

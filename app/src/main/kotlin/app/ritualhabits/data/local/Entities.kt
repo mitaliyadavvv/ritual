@@ -11,6 +11,7 @@ import app.ritualhabits.core.model.FocusSession
 import app.ritualhabits.core.model.FocusStatus
 import kotlinx.datetime.Instant
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import kotlin.time.Duration.Companion.milliseconds
 
 @Entity(tableName = "habits")
@@ -22,6 +23,10 @@ data class HabitEntity(
     @ColumnInfo(name = "created_at") val createdAt: Instant,
     @ColumnInfo(name = "archived_at") val archivedAt: Instant?,
     @ColumnInfo(name = "deleted_at") val deletedAt: Instant?,
+    /** Daily reminder switch (schema v2). Existing habits migrate with reminders off. */
+    @ColumnInfo(name = "reminder_enabled", defaultValue = "0") val reminderEnabled: Boolean = false,
+    /** Local wall-clock time of the reminder; kept when the switch is off so it's remembered. */
+    @ColumnInfo(name = "reminder_time") val reminderTime: LocalTime? = null,
 ) {
     val isDeleted: Boolean get() = deletedAt != null
     val isArchived: Boolean get() = !isDeleted && archivedAt != null

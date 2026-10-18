@@ -35,12 +35,16 @@ android {
         compose = true
         buildConfig = true
     }
+    // Exported Room schemas as debug-only assets, so MigrationTestHelper (Robolectric) can build old
+    // schema versions. Never part of release builds.
+    sourceSets.getByName("debug").assets.srcDir("$projectDir/schemas")
     testOptions {
         unitTests.isIncludeAndroidResources = true
         unitTests.all { test ->
-            // Compose UI tests need the debug-only ui-test-manifest host activity.
+            // Compose UI tests need the debug-only ui-test-manifest host activity; the migration test
+            // needs the debug-only schema assets.
             if (test.name == "testReleaseUnitTest") {
-                test.exclude("**/NavigationUiTest*", "**/TodayJourneyTest*", "**/ManageJourneyTest*")
+                test.exclude("**/NavigationUiTest*", "**/TodayJourneyTest*", "**/ManageJourneyTest*", "**/ReminderMigrationTest*")
             }
         }
     }

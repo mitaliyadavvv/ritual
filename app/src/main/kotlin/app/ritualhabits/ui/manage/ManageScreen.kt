@@ -131,6 +131,8 @@ fun ManageRoute(
             onDescriptionChange = viewModel::onDescriptionChange,
             onSave = viewModel::saveEditor,
             onDismiss = viewModel::dismissEditor,
+            onReminderEnabledChange = viewModel::onReminderEnabledChange,
+            onReminderTimeChange = viewModel::onReminderTimeChange,
         )
     }
 

@@ -307,6 +307,30 @@ eligibility periods, completions and "all due habits done" rule used for streaks
 - Archived and deleted habits stay in the month they were due, with their history, labelled.
 - Navigation runs from the first tracked month to the current month. No schema change was needed.
 
+## 8b. Habit reminders (implemented after Stage 6; schema v2)
+- **Storage:** `habits.reminder_enabled` (INTEGER NOT NULL DEFAULT 0) and `habits.reminder_time`
+  (minutes after local midnight, nullable). `MIGRATION_1_2` only adds the two columns, so existing
+  habits migrate with reminders off and every other row is untouched (`ReminderMigrationTest`). The
+  time is kept when the switch is turned off, so it's remembered.
+- **Editor:** a Reminder block in the shared Add/Edit sheet. Off by default, 9:00 AM when first
+  switched on, Material 3 time picker, saved only with the habit. Switching it on is when Ritual asks
+  for notification permission (Android 13+).
+- **Scheduling:** `ReminderCoordinator` observes the habits table and keeps exactly one AlarmManager
+  alarm per active habit with its reminder on, at `ReminderSchedule.next(time)` (the next local
+  occurrence; DST gaps move forward, never skip). Create, edit, archive, restore, delete and
+  undo-delete all go through the existing repository; the coordinator reacts to the resulting
+  rows, so lifecycle code is unchanged. Alarm identity is `ritual://reminder/<habitId>`.
+- **Delivery:** `HabitReminderReceiver` → `onReminder`: arms tomorrow's alarm first, then shows
+  "A little nudge from Ritual · Time for <habit>" only if the habit is still active, due today
+  (eligibility periods) and not done today, and the delivery is for today (no backlog from earlier
+  days). Notifications are tagged per habit, so repeats replace and never stack. A reminder never
+  writes a completion. Tapping opens Today.
+- **System events:** `ReminderResyncReceiver` recomputes every alarm on boot, app update, clock
+  change and time-zone change. The first sync after app start is a full resync too.
+- **Timing:** exact only if the user has already allowed exact alarms (Focus's "Allow precise
+  alerts"); otherwise `setAndAllowWhileIdle`, which may arrive a few minutes after the set time.
+  Reminders never request exact-alarm access.
+
 ## 9. Validation
 
 - Name: trimmed, internal whitespace collapsed, 1–60 characters, **unique case-insensitively** among
@@ -328,7 +352,8 @@ eligibility periods, completions and "all due habits done" rule used for streaks
 
 ## 11. Migration strategy
 
-- **Room:** `exportSchema = true` to `app/schemas/` (committed to version control). Every schema change
+- **Room:** `exportSchema = true` to `app/schemas/` (committed to version control). Current
+  version: 2 (`MIGRATION_1_2`: reminder columns). Every schema change
   bumps the version and ships an explicit `Migration` (or `AutoMigration`) plus a `MigrationTestHelper` test.
   `fallbackToDestructiveMigration` is **never** enabled.
 - **DataStore:** keys are additive with defaults. Renames require a `DataMigration`.

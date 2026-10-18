@@ -8,7 +8,7 @@
     <!-- Lets the end-of-session alert arrive on time. Never requested with a prompt; if the system
          doesn't grant it, Ritual falls back to an inexact alarm (the session is recorded either way). -->
     <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
-    <!-- Alarms are cleared on reboot: re-arm a running session's alert. -->
+    <!-- Alarms are cleared on reboot: re-arm a running focus session's alert and daily habit reminders. -->
     <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
 
     <application
@@ -38,6 +38,20 @@
             <intent-filter>
                 <action android:name="android.intent.action.BOOT_COMPLETED" />
                 <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name=".data.reminders.HabitReminderReceiver"
+            android:exported="false" />
+        <receiver
+            android:name=".data.reminders.ReminderResyncReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
+                <action android:name="android.intent.action.TIME_SET" />
+                <action android:name="android.intent.action.TIMEZONE_CHANGED" />
             </intent-filter>
         </receiver>
     </application>

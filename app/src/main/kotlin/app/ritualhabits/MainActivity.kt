@@ -57,11 +57,15 @@ class MainActivity : ComponentActivity() {
         tabFrom(intent)?.let { requestedTab.value = it }
     }
 
-    private fun tabFrom(intent: Intent?): TopLevelDestination? =
-        if (intent?.getStringExtra(EXTRA_OPEN_TAB) == TAB_FOCUS) TopLevelDestination.FOCUS else null
+    private fun tabFrom(intent: Intent?): TopLevelDestination? = when (intent?.getStringExtra(EXTRA_OPEN_TAB)) {
+        TAB_FOCUS -> TopLevelDestination.FOCUS
+        TAB_TODAY -> TopLevelDestination.TODAY
+        else -> null
+    }
 
     companion object {
         const val EXTRA_OPEN_TAB = "app.ritualhabits.extra.OPEN_TAB"
         const val TAB_FOCUS = "focus"
+        const val TAB_TODAY = "today"
     }
 }

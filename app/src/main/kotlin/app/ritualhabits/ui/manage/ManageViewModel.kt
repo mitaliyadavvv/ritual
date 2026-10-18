@@ -2,6 +2,7 @@ package app.ritualhabits.ui.manage
 
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import app.ritualhabits.core.rules.ReminderSchedule
 import app.ritualhabits.core.time.AppClock
 import app.ritualhabits.core.time.HabitDay
 import app.ritualhabits.data.local.HabitEntity
@@ -25,6 +26,7 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.launch
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 
 enum class ManageTab { ACTIVE, ARCHIVED }
 
@@ -34,6 +36,8 @@ data class ManagedHabit(
     val description: String?,
     val createdOn: LocalDate,
     val archivedOn: LocalDate?,
+    val reminderEnabled: Boolean = false,
+    val reminderTime: LocalTime? = null,
 )
 
 sealed interface ManageUiState {
@@ -102,6 +106,8 @@ class ManageViewModel(
         description = description,
         createdOn = HabitDay.of(createdAt, clock.zone()),
         archivedOn = archivedAt?.let { HabitDay.of(it, clock.zone()) },
+        reminderEnabled = reminderEnabled,
+        reminderTime = reminderTime,
     )
 
     fun retry() = retry.update { it + 1 }
@@ -122,7 +128,15 @@ class ManageViewModel(
     }
 
     fun openEdit(habit: ManagedHabit) {
-        _editor.value = HabitEditor(habit.id, HabitFormState(name = habit.name, description = habit.description.orEmpty()))
+        _editor.value = HabitEditor(
+            habit.id,
+            HabitFormState(
+                name = habit.name,
+                description = habit.description.orEmpty(),
+                reminderEnabled = habit.reminderEnabled,
+                reminderTime = habit.reminderTime ?: ReminderSchedule.DEFAULT_TIME,
+            ),
+        )
     }
 
     fun dismissEditor() {
@@ -133,15 +147,19 @@ class ManageViewModel(
 
     fun onDescriptionChange(text: String) = _editor.update { it?.copy(form = it.form.copy(description = text, error = null)) }
 
+    fun onReminderEnabledChange(enabled: Boolean) = _editor.update { it?.copy(form = it.form.copy(reminderEnabled = enabled)) }
+
+    fun onReminderTimeChange(time: LocalTime) = _editor.update { it?.copy(form = it.form.copy(reminderTime = time)) }
+
     fun saveEditor() {
         val editor = _editor.value ?: return
         if (editor.form.saving) return
         _editor.value = editor.copy(form = editor.form.copy(saving = true))
         viewModelScope.launch {
             val result = if (editor.isNew) {
-                habits.create(editor.form.name, editor.form.description)
+                habits.create(editor.form.name, editor.form.description, editor.form.reminder)
             } else {
-                habits.update(editor.habitId!!, editor.form.name, editor.form.description)
+                habits.update(editor.habitId!!, editor.form.name, editor.form.description, editor.form.reminder)
             }
             when (result) {
                 is HabitWriteResult.Success -> {

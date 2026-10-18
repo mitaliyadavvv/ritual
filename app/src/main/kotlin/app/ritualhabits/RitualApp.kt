@@ -12,5 +12,7 @@ class RitualApp : Application() {
         container = AppContainer(this)
         container.habitDay.install()
         container.focusNotifier.createChannel()
+        container.reminderNotifier.createChannel()
+        container.reminders.start(container.appScope)
     }
 }

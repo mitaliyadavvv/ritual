@@ -17,7 +17,11 @@ import app.ritualhabits.data.local.RitualDatabase
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.combine
 import kotlinx.datetime.LocalDate
+import kotlinx.datetime.LocalTime
 import java.util.UUID
+
+/** A habit's daily reminder setting as saved from the editor. */
+data class ReminderSetting(val enabled: Boolean, val time: LocalTime?)
 
 sealed interface HabitWriteResult {
     data class Success(val habitId: String) : HabitWriteResult
@@ -47,7 +51,7 @@ class HabitRepository(
             HabitHistory(periods.map { it.toModel() }, completions.map { CompletionKey(it.habitId, it.date) })
         }
 
-    suspend fun create(name: String, description: String?): HabitWriteResult = db.withTransaction {
+    suspend fun create(name: String, description: String?, reminder: ReminderSetting? = null): HabitWriteResult = db.withTransaction {
         when (val input = HabitValidation.validate(name, description, habitDao.liveNames())) {
             is HabitInput.Invalid -> HabitWriteResult.Invalid(input.error)
             is HabitInput.Valid -> {
@@ -59,6 +63,8 @@ class HabitRepository(
                     createdAt = clock.now(),
                     archivedAt = null,
                     deletedAt = null,
+                    reminderEnabled = reminder?.enabled ?: false,
+                    reminderTime = reminder?.time,
                 )
                 habitDao.insert(habit)
                 apply(EligibilityRules.onCreate(habit.id, clock.today()))
@@ -68,12 +74,20 @@ class HabitRepository(
     }
 
     /** Rename / edit description. Never touches eligibility or completions. */
-    suspend fun update(id: String, name: String, description: String?): HabitWriteResult = db.withTransaction {
+    suspend fun update(id: String, name: String, description: String?, reminder: ReminderSetting? = null): HabitWriteResult = db.withTransaction {
         val habit = habitDao.get(id)?.takeUnless { it.isDeleted } ?: return@withTransaction HabitWriteResult.NotFound
         when (val input = HabitValidation.validate(name, description, habitDao.liveNames(excludingId = id))) {
             is HabitInput.Invalid -> HabitWriteResult.Invalid(input.error)
             is HabitInput.Valid -> {
-                habitDao.update(habit.copy(name = input.name, description = input.description))
+                habitDao.update(
+                    habit.copy(
+                        name = input.name,
+                        description = input.description,
+                        // null = leave the reminder as it is (callers that don't edit reminders).
+                        reminderEnabled = reminder?.enabled ?: habit.reminderEnabled,
+                        reminderTime = if (reminder != null) reminder.time ?: habit.reminderTime else habit.reminderTime,
+                    ),
+                )
                 HabitWriteResult.Success(id)
             }
         }

@@ -147,6 +147,8 @@ fun TodayRoute(
             onDescriptionChange = viewModel::onDescriptionChange,
             onSave = viewModel::saveHabit,
             onDismiss = viewModel::dismissAddHabit,
+            onReminderEnabledChange = viewModel::onReminderEnabledChange,
+            onReminderTimeChange = viewModel::onReminderTimeChange,
         )
     }
 }
