@@ -1,0 +1,6 @@
+<resources>
+    <!-- Window-level theme only; all in-app styling comes from the Compose theme (Stage 3). -->
+    <style name="Theme.Ritual" parent="android:Theme.Material.Light.NoActionBar">
+        <item name="android:windowBackground">#FFFFFFFF</item>
+    </style>
+</resources>
