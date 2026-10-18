@@ -57,9 +57,11 @@ class DesignSystemTest {
         // Glass over the most contrasting content possible: black text behind light glass, white behind dark.
         for (p in listOf(LightColors, DarkColors)) {
             val behind = if (p.isDark) Color.White else Color.Black
-            val effective = p.glass.compositeOver(behind)
-            assertTrue(contrast(p.textPrimary, effective) >= 7.0, "primary on glass ${contrast(p.textPrimary, effective)}")
-            assertTrue(contrast(p.textSecondary, effective) >= 4.5, "secondary on glass ${contrast(p.textSecondary, effective)}")
+            // Only primary-strength text is used on glass: the bar and the selection bubble on top of it.
+            val bar = p.glass.compositeOver(behind)
+            val bubble = p.glassSelected.compositeOver(bar)
+            assertTrue(contrast(p.textPrimary, bar) >= 7.0, "primary on glass ${contrast(p.textPrimary, bar)}")
+            assertTrue(contrast(p.textPrimary, bubble) >= 7.0, "primary on bubble ${contrast(p.textPrimary, bubble)}")
         }
     }
 
@@ -118,7 +120,7 @@ class DesignSystemTest {
     }
 
     private fun RitualColors.all() =
-        listOf(background, surface, surfaceRaised, fill, glass, glassEdge, textPrimary, textSecondary, textTertiary, border, borderStrong, accent, onAccent, onAccentSecondary, scrim, shadow)
+        listOf(background, surface, surfaceRaised, fill, glass, glassSelected, glassEdge, glassRim, textPrimary, textSecondary, textTertiary, border, borderStrong, accent, onAccent, onAccentSecondary, scrim, shadow)
 
     private fun contrast(a: Color, b: Color): Double {
         val (hi, lo) = listOf(a.luminance(), b.luminance()).sortedDescending()

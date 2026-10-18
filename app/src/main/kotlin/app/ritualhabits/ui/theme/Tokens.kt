@@ -11,8 +11,8 @@ import androidx.compose.ui.unit.dp
  * Light and dark are designed separately rather than inverted:
  * - Light: white grouped surfaces on a soft neutral page; near-black ink.
  * - Dark: true-black page (OLED), charcoal grouped surfaces, softened white ink.
- * Contrast (WCAG): textPrimary ≥ 7:1 and textSecondary ≥ 4.5:1 on every opaque surface, and
- * secondary text stays ≥ 4.5:1 on the glass bar even over worst-case content behind it.
+ * Contrast (WCAG): textPrimary ≥ 7:1 and textSecondary ≥ 4.5:1 on every opaque surface. Only
+ * textPrimary is used on glass, and it stays ≥ 7:1 there even over worst-case content behind it.
  */
 @Immutable
 data class RitualColors(
@@ -24,10 +24,14 @@ data class RitualColors(
     val surfaceRaised: Color,
     /** Tonal fill for quiet controls: icon buttons, segmented tracks, secondary buttons. */
     val fill: Color,
-    /** Floating "glass" surfaces (bottom bar). Mostly opaque so text over it stays legible. */
+    /** Floating "glass" surfaces (tab bar). Translucent; only primary-strength text sits on it. */
     val glass: Color,
-    /** Delicate top-edge highlight on glass. */
+    /** The raised selection bubble inside glass. */
+    val glassSelected: Color,
+    /** Luminous inner rim of glass (brightest at the top). */
     val glassEdge: Color,
+    /** Fine outer edge that separates glass from the page. */
+    val glassRim: Color,
     val textPrimary: Color,
     val textSecondary: Color,
     /** Decorative and disabled only; never for essential text. */
@@ -52,8 +56,10 @@ val LightColors = RitualColors(
     surface = Color(0xFFFFFFFF),
     surfaceRaised = Color(0xFFFFFFFF),
     fill = Color(0xFFE9E9E9),
-    glass = Color(0xEBFFFFFF),
+    glass = Color(0xD1F7F7F7),
+    glassSelected = Color(0xFFFFFFFF),
     glassEdge = Color(0xFFFFFFFF),
+    glassRim = Color(0x1F000000),
     textPrimary = Color(0xFF111111),
     textSecondary = Color(0xFF636363),
     textTertiary = Color(0xFFA3A3A3),
@@ -72,8 +78,10 @@ val DarkColors = RitualColors(
     surface = Color(0xFF1B1B1B),
     surfaceRaised = Color(0xFF363636),
     fill = Color(0xFF2B2B2B),
-    glass = Color(0xEB1E1E1E),
-    glassEdge = Color(0x2EFFFFFF),
+    glass = Color(0xCC1E1E1E),
+    glassSelected = Color(0xE63A3A3A),
+    glassEdge = Color(0x47FFFFFF),
+    glassRim = Color(0x1FFFFFFF),
     textPrimary = Color(0xFFF4F4F4),
     textSecondary = Color(0xFFA3A3A3),
     textTertiary = Color(0xFF6A6A6A),

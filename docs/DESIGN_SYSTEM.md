@@ -17,10 +17,12 @@ themes are designed separately:
 | surface | #FFFFFF | #1B1B1B | grouped lists, summary card, fields |
 | surfaceRaised | #FFFFFF | #363636 | segmented thumb |
 | fill | #E9E9E9 | #2B2B2B | tonal buttons, tracks, selected-tab pill |
-| glass | white 92 % | #1E1E1E 92 % | floating tab bar only |
-| glassEdge | white | white 18 % | top-edge highlight on glass |
+| glass | #F7F7F7 82 % | #1E1E1E 80 % | floating tab bar only |
+| glassSelected | white | #3A3A3A 90 % | the tab bar's selection bubble |
+| glassEdge | white | white 28 % | luminous inner rim of glass |
+| glassRim | black 12 % | white 12 % | fine outer edge of glass |
 | textPrimary | #111111 | #F4F4F4 | ≥ 7:1 everywhere |
-| textSecondary | #636363 | #A3A3A3 | ≥ 4.5:1 on every surface and on glass over worst-case content |
+| textSecondary | #636363 | #A3A3A3 | ≥ 4.5:1 on every opaque surface (not used on glass) |
 | textTertiary | #A3A3A3 | #6A6A6A | decorative only |
 | border / borderStrong | #E3E3E3 / #C2C2C2 | #2E2E2E / #555555 | separators / pending rings |
 | accent / onAccent | ink / white | near-white / black | filled controls, completion marks |
@@ -64,16 +66,34 @@ label when labels no longer fit, and every tab keeps its accessible name.
 - Borders are avoided. Separators are hairlines inset to align with row text.
 
 ## Materials: restrained "liquid glass"
-Glass is used **only** for the floating tab bar (`Modifier.glassSurface`):
-- 92 % opaque neutral fill. Content scrolling beneath reads as a soft tonal shift. Labels on the bar
-  are tested at ≥ 4.5:1 even over pure black (light) or pure white (dark) content behind them.
-- A delicate edge: a white top highlight fading out by mid-height, plus a faint lower hairline.
-- A very soft, wide shadow in light mode. No shadow in dark mode, where the edge highlight does the work.
+Glass is used **only** for the floating tab bar and its selection bubble (`Modifier.glassSurface`):
+- A translucent neutral fill (about 80 %). Content behind shows through as a soft tonal shift.
+  Only primary-strength text sits on glass; it is tested at ≥ 7:1 over pure black (light) or pure
+  white (dark) content behind both the bar and the bubble.
+- A luminous rim: a fine outer edge plus an inner highlight that is brightest along the top, fades
+  through the middle and returns as a faint glint at the bottom.
+- A very soft shadow in light mode. Dark mode relies on the rim.
 - **No backdrop blur.** Compose has no supported API for blurring content *behind* a surface without a
-  third-party library (e.g. Haze), and the material must look right without blur anyway. It renders
-  identically on every Android version, with no extra GPU passes.
+  third-party library (e.g. Haze), and the material must look right without blur. It renders
+  identically on every Android version with no extra GPU passes.
 
 All other surfaces are opaque.
+
+## Tab bar (`RitualBottomBar`)
+Modelled closely on a native liquid-glass tab bar reference:
+- A full stadium capsule, 24 dp from the screen sides and 8 dp above the gesture bar, at least 64 dp
+  tall, with a maximum width of 440 dp on large screens.
+- The selected tab sits in a raised glass **bubble** that encloses icon and label, inset 5 dp from
+  the capsule. Every icon and label stays full-strength (`textPrimary`); selection is shown by the
+  bubble, never by colour. Each tab is a `Role.Tab` with selected semantics.
+- Switching glides the bubble. Its edges move on separate springs (the leading edge stiffer), so it
+  stretches slightly and settles. With animations off it snaps.
+- A soft fade of the page colour behind the bar lets content recede as it scrolls underneath.
+- Large fonts: labels are never capped. When they don't all fit, only the selected label shows, the
+  selected tab widens to fit it, and the icon-only tabs share the rest (each ≥ 52 dp). Hidden labels
+  remain the tabs' accessible names. Screens reserve the bar's measured height.
+- Not included: the reference's detached circular button, which has no counterpart among Ritual's
+  four destinations.
 
 ## Motion
 | Spec | Value | Use |
@@ -81,7 +101,8 @@ All other surfaces are opaque.
 | quick | 140 ms | colour and fill changes, press feedback |
 | standard | 240 ms | content changes, tab cross-fade |
 | emphasized | 320 ms | pushed screens |
-| settle | spring, damping 0.82 | completion check, progress ring, sliding thumb, tab pill (no visible bounce) |
+| settle | spring, damping 0.82 | completion check, progress ring, sliding thumb, tab widths (no visible bounce) |
+| bubble | two springs, damping 0.78 / 0.86 | tab-bar selection bubble edges (subtle stretch) |
 | emphasis | spring, damping 0.62 | only the habit that completes the day |
 
 Press feedback is a 0.96 scale. Nothing blocks taps or shifts layout. When the system
