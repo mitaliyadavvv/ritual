@@ -26,8 +26,11 @@ class Converters {
 }
 
 @Database(
-    entities = [HabitEntity::class, HabitPeriodEntity::class, CompletionEntity::class, FocusSessionEntity::class],
-    version = 2,
+    entities = [
+        HabitEntity::class, HabitPeriodEntity::class, CompletionEntity::class, FocusSessionEntity::class,
+        SyncOutboxEntity::class, SyncMetaEntity::class,
+    ],
+    version = 3,
     exportSchema = true,
 )
 @TypeConverters(Converters::class)
@@ -36,6 +39,7 @@ abstract class RitualDatabase : RoomDatabase() {
     abstract fun periodDao(): PeriodDao
     abstract fun completionDao(): CompletionDao
     abstract fun focusSessionDao(): FocusSessionDao
+    abstract fun syncDao(): SyncDao
 
     companion object {
         const val NAME = "ritual.db"
@@ -48,10 +52,22 @@ abstract class RitualDatabase : RoomDatabase() {
             }
         }
 
+        /** v3: cloud backup bookkeeping. Two new tables; existing tables and rows untouched. */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `sync_outbox` (`entity` TEXT NOT NULL, `key` TEXT NOT NULL, " +
+                        "`changed_at` INTEGER NOT NULL, PRIMARY KEY(`entity`, `key`))",
+                )
+                db.execSQL("CREATE TABLE IF NOT EXISTS `sync_meta` (`key` TEXT NOT NULL, `value` TEXT NOT NULL, PRIMARY KEY(`key`))")
+            }
+        }
+
         // Schema changes ship explicit migrations (see docs/ARCHITECTURE.md §11). Never destructive.
         fun build(context: Context): RitualDatabase =
             Room.databaseBuilder(context, RitualDatabase::class.java, NAME)
-                .addMigrations(MIGRATION_1_2)
+                .addMigrations(MIGRATION_1_2, MIGRATION_2_3)
+                .addCallback(SyncTriggers)
                 .build()
     }
 }

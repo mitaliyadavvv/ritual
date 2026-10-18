@@ -35,7 +35,7 @@ fallback is `app.ritualhabits.android`. Decide before the first upload, never af
 | Dates | `kotlinx-datetime` (`LocalDate`, `Instant`, `TimeZone`) |
 | DI | Manual `AppContainer`. No Hilt: fewer moving parts for a 5-screen app |
 | Background | `AlarmManager` alarm + `BroadcastReceiver` for focus end. **No foreground service** |
-| Network | None. No `INTERNET` permission, no analytics, no backend |
+| Network | Optional only: Google sign-in + Firestore backup (§8c). No analytics. The app works fully offline and never requires an account |
 
 ### Modules
 
@@ -331,6 +331,44 @@ eligibility periods, completions and "all due habits done" rule used for streaks
   alerts"); otherwise `setAndAllowWhileIdle`, which may arrive a few minutes after the set time.
   Reminders never request exact-alarm access.
 
+## 8c. Google sign-in and cloud backup (schema v3)
+Optional. Without `app/google-services.json` the build has no Firebase config, the Account section is
+hidden, and the app behaves exactly as before. Setup steps: `docs/CLOUD_SETUP.md`.
+
+- **Backend:** Firebase Authentication (Google provider) + Cloud Firestore. Chosen over alternatives
+  because nothing existed yet, it needs no server code, keeps per-user access rules in one file
+  (`firestore.rules`), and free projects don't pause when idle. No service keys ship in the app; the
+  values read from google-services.json are public client identifiers.
+- **Sign-in:** Credential Manager "Sign in with Google" (`GetSignInWithGoogleOption`), basic profile
+  only (openid, email, name). The ID token is exchanged for a Firebase session. Entry point: Settings →
+  Account → Continue with Google. No onboarding, nothing forced.
+- **Local first:** Room stays the only thing the UI reads. Firestore runs with a memory cache only.
+- **Change capture:** SQLite triggers (`SyncTriggers`) write `sync_outbox(entity, key, changed_at)` on
+  every insert/update/delete of habits, habit_periods and completions, so no repository code changed.
+  They only fire once the data belongs to an account (`sync_meta.owner_uid`), and not while a
+  download is being applied (`sync_meta.applying`).
+- **Cloud layout:** `users/{uid}/habits/{habitId}` (habit fields, reminder, eligibility periods),
+  `users/{uid}/completions/{habitId}_{date}` (`done=false` = un-ticked), `users/{uid}/settings/preferences`
+  (theme, haptics). Rules: only `request.auth.uid == uid` can read or write; everything else denied
+  (checked against the emulator by `tools/firestore-rules-test`).
+- **Sync (`SyncEngine`):** pull records committed since the last server-time cursor; apply each unless
+  this phone has a newer pending change to it (last writer wins per record, by device time of the
+  change); then upload the outbox in batches (habits before completions) and clear only entries that
+  didn't change meanwhile. Stable document ids make retries idempotent. Streaks are never stored:
+  they're recalculated from the synced periods and completions, and habit days are calendar dates,
+  so time zones never shift them.
+- **Accounts:** first sign-in on a phone claims its existing data and uploads it (cloud copies win
+  only exact ties, so an empty account can't wipe local progress). Signing out keeps the data on the
+  phone, still owned by that account; changes made meanwhile upload on the next sign-in. Signing in as
+  a different account asks first; "Switch" removes the previous account's records from the phone
+  (they stay in that account's cloud copy) and downloads the new one; "Cancel" signs out and changes
+  nothing.
+- **When it runs (`SyncManager`):** on sign-in, 2 s after local changes, on app foreground, when the
+  network returns, and on "Back up now"; failures retry after 15 s, 1 min, then every 5 min while the
+  app is running. Status (backing up / offline with N waiting / last backed up) shows in Settings.
+- **Not synced:** focus-session timer records (device-local; completions they produced do sync), the
+  notification-permission flag, and the unused profile name.
+
 ## 9. Validation
 
 - Name: trimmed, internal whitespace collapsed, 1–60 characters, **unique case-insensitively** among
@@ -353,7 +391,7 @@ eligibility periods, completions and "all due habits done" rule used for streaks
 ## 11. Migration strategy
 
 - **Room:** `exportSchema = true` to `app/schemas/` (committed to version control). Current
-  version: 2 (`MIGRATION_1_2`: reminder columns). Every schema change
+  version: 3 (`MIGRATION_1_2`: reminder columns; `MIGRATION_2_3`: `sync_outbox`, `sync_meta`). Every schema change
   bumps the version and ships an explicit `Migration` (or `AutoMigration`) plus a `MigrationTestHelper` test.
   `fallbackToDestructiveMigration` is **never** enabled.
 - **DataStore:** keys are additive with defaults. Renames require a `DataMigration`.

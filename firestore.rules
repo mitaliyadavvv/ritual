@@ -1,0 +1,23 @@
+rules_version = '2';
+
+// Ritual cloud backup. Each person's data lives under users/{their Firebase Auth uid}, and only a
+// request signed in as that same user can read or write it. Everything else is denied.
+service cloud.firestore {
+  match /databases/{database}/documents {
+    match /users/{uid} {
+      allow read, write: if isOwner(uid);
+
+      match /{collection}/{docId} {
+        allow read, delete: if isOwner(uid);
+        allow create, update: if isOwner(uid)
+          && collection in ['habits', 'completions', 'settings']
+          && request.resource.data.updatedAt is int
+          && request.resource.data.size() <= 20;
+      }
+    }
+
+    function isOwner(uid) {
+      return request.auth != null && request.auth.uid == uid;
+    }
+  }
+}

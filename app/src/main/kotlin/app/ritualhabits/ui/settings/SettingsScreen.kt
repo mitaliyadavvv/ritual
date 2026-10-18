@@ -1,5 +1,6 @@
 package app.ritualhabits.ui.settings
 
+import androidx.compose.foundation.layout.ColumnScope
 import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
@@ -16,6 +17,7 @@ import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.semantics.Role
 import androidx.compose.ui.semantics.heading
 import androidx.compose.ui.semantics.semantics
@@ -39,9 +41,33 @@ import app.ritualhabits.ui.theme.RitualType
 import app.ritualhabits.ui.theme.Spacing
 
 @Composable
-fun SettingsRoute(onBack: () -> Unit, viewModel: SettingsViewModel = viewModel(factory = RitualViewModels.Factory)) {
+fun SettingsRoute(
+    onBack: () -> Unit,
+    viewModel: SettingsViewModel = viewModel(factory = RitualViewModels.Factory),
+    accountViewModel: AccountViewModel = viewModel(factory = RitualViewModels.Factory),
+) {
     val state by viewModel.uiState.collectAsStateWithLifecycle()
-    SettingsScreen(state, onBack, viewModel::setThemeMode, viewModel::setHapticsEnabled)
+    val account by accountViewModel.uiState.collectAsStateWithLifecycle()
+    val context = LocalContext.current
+    val clock = RitualViewModels.clock()
+    SettingsScreen(
+        state,
+        onBack,
+        viewModel::setThemeMode,
+        viewModel::setHapticsEnabled,
+        dataStorageNote = dataStorageNote(account.account),
+        accountSection = {
+            AccountSection(
+                state = account,
+                clock = clock,
+                onSignIn = accountViewModel::signIn,
+                onSignOut = accountViewModel::signOut,
+                onSyncNow = accountViewModel::syncNow,
+                onChooseAccount = accountViewModel::chooseAccount,
+                activityContext = context,
+            )
+        },
+    )
 }
 
 /**
@@ -54,6 +80,8 @@ fun SettingsScreen(
     onBack: () -> Unit,
     onThemeMode: (ThemeMode) -> Unit,
     onHaptics: (Boolean) -> Unit,
+    dataStorageNote: String = "Ritual works offline. Habits and history are stored only on this device.",
+    accountSection: @Composable ColumnScope.() -> Unit = {},
 ) {
     val haptics = Ritual.haptics
     ScreenColumn(bottomInset = WindowInsets.navigationBars.asPaddingValues()) {
@@ -68,6 +96,8 @@ fun SettingsScreen(
             modifier = Modifier.semantics { heading() },
         )
         Spacer(Modifier.height(Spacing.xl))
+
+        accountSection()
 
         SectionLabel("Appearance")
         SegmentedChoice(
@@ -108,7 +138,7 @@ fun SettingsScreen(
             Hairline()
             ListRow(
                 title = "Your data",
-                supporting = "Ritual works offline. Habits and history are stored only on this device.",
+                supporting = dataStorageNote,
             )
         }
     }

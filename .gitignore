@@ -23,3 +23,7 @@ google-services.json
 
 # Kotlin compiler session data
 .kotlin/
+
+# Node tooling (Firestore rules test)
+node_modules/
+*.log

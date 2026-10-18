@@ -111,3 +111,30 @@ data class FocusSessionEntity(
         )
     }
 }
+
+/**
+ * A local change waiting to be uploaded (schema v3). Rows are written by SQLite triggers
+ * ([SyncTriggers]), so every existing write path is captured without changing it. One row per record:
+ * a later change to the same record just moves [changedAt] forward.
+ */
+@Entity(tableName = "sync_outbox", primaryKeys = ["entity", "key"])
+data class SyncOutboxEntity(
+    /** [SyncEntity.HABIT] (habit row and its eligibility periods) or [SyncEntity.COMPLETION]. */
+    val entity: String,
+    /** Habit id, or "<habitId>|<yyyy-MM-dd>" for a completion. */
+    val key: String,
+    /** Device wall-clock time of the change, epoch ms: the last-writer-wins timestamp. */
+    @ColumnInfo(name = "changed_at") val changedAt: Long,
+)
+
+/** Small key/value table for sync state that must change atomically with the data (schema v3). */
+@Entity(tableName = "sync_meta")
+data class SyncMetaEntity(
+    @PrimaryKey val key: String,
+    val value: String,
+)
+
+object SyncEntity {
+    const val HABIT = "habit"
+    const val COMPLETION = "completion"
+}

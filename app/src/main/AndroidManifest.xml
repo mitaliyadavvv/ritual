@@ -1,7 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 
-    <!-- No INTERNET permission: Ritual is offline-only. -->
+    <!-- Optional Google sign-in and cloud backup. Ritual itself works fully offline. -->
+    <uses-permission android:name="android.permission.INTERNET" />
+    <!-- Back up waiting changes as soon as the connection returns. -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
 
     <!-- "Focus session complete" notification (Android 13+ asks the user, the first time a session starts). -->
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />

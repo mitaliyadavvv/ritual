@@ -20,6 +20,11 @@ import app.ritualhabits.data.repository.FocusRepository
 import app.ritualhabits.data.repository.HabitRepository
 import app.ritualhabits.data.repository.LocalDataManager
 import app.ritualhabits.data.repository.PreferencesRepository
+import app.ritualhabits.data.sync.CloudServices
+import app.ritualhabits.data.sync.CloudSetup
+import app.ritualhabits.data.sync.SyncEngine
+import app.ritualhabits.data.sync.SyncManager
+import app.ritualhabits.data.sync.UnavailableCloudStore
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.MainScope
 
@@ -44,6 +49,16 @@ class AppContainer(
     val focusNotifier by lazy { AndroidFocusNotifier(appContext) }
     val reminderNotifier by lazy { AndroidReminderNotifier(appContext) }
     val reminders by lazy { ReminderCoordinator(habits, AndroidReminderAlarms(appContext), reminderNotifier, clock) }
+    /** Google sign-in + cloud backup; null when this build has no Firebase configuration. */
+    val cloud: CloudServices? by lazy { CloudSetup.create(appContext) }
+    val sync by lazy {
+        SyncManager(
+            auth = cloud?.auth,
+            engine = SyncEngine(database, cloud?.store ?: UnavailableCloudStore, preferences),
+            scope = appScope,
+            online = SyncManager.networkAvailability(appContext),
+        )
+    }
     val focusCompletion by lazy {
         FocusCompletionHandler(focus, habits, focusAlarms, focusNotifier) {
             ProcessLifecycleOwner.get().lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)

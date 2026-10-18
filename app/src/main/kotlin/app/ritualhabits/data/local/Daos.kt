@@ -115,3 +115,62 @@ interface FocusSessionDao {
     @Query("UPDATE focus_sessions SET acknowledged = 1 WHERE id = :id")
     suspend fun acknowledge(id: String)
 }
+
+@Dao
+interface SyncDao {
+    @Query("SELECT * FROM sync_outbox ORDER BY changed_at")
+    suspend fun outbox(): List<SyncOutboxEntity>
+
+    @Query("SELECT COUNT(*) FROM sync_outbox")
+    fun observeOutboxCount(): Flow<Int>
+
+    @Query("SELECT * FROM sync_outbox WHERE entity = :entity AND `key` = :key")
+    suspend fun outboxEntry(entity: String, key: String): SyncOutboxEntity?
+
+    /** Removes an uploaded entry only if nothing changed the record since it was read. */
+    @Query("DELETE FROM sync_outbox WHERE entity = :entity AND `key` = :key AND changed_at = :changedAt")
+    suspend fun markUploaded(entity: String, key: String, changedAt: Long)
+
+    @Query("DELETE FROM sync_outbox WHERE entity = :entity AND `key` = :key")
+    suspend fun dropOutboxEntry(entity: String, key: String)
+
+    /** First sign-in: queue every existing record, timestamped 0 so cloud copies win any tie. */
+    @Query("INSERT OR IGNORE INTO sync_outbox (entity, `key`, changed_at) SELECT 'habit', id, 0 FROM habits")
+    suspend fun queueAllHabits()
+
+    @Query(
+        "INSERT OR IGNORE INTO sync_outbox (entity, `key`, changed_at) " +
+            "SELECT 'completion', habit_id || '|' || date, 0 FROM completions",
+    )
+    suspend fun queueAllCompletions()
+
+    @Query("SELECT value FROM sync_meta WHERE `key` = :key")
+    suspend fun meta(key: String): String?
+
+    @Query("SELECT value FROM sync_meta WHERE `key` = :key")
+    fun observeMeta(key: String): Flow<String?>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun setMeta(meta: SyncMetaEntity)
+
+    @Query("DELETE FROM sync_meta WHERE `key` = :key")
+    suspend fun deleteMeta(key: String)
+
+    // Remote apply: plain writes. Upserts never use REPLACE on habits, which would cascade-delete history.
+    @Query("DELETE FROM habit_periods WHERE habit_id = :habitId")
+    suspend fun deletePeriods(habitId: String)
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun upsertCompletion(completion: CompletionEntity)
+
+    // Account switch: remove the previous account's records from this phone.
+    @Query("DELETE FROM completions") suspend fun deleteAllCompletions()
+    @Query("DELETE FROM focus_sessions") suspend fun deleteAllFocusSessions()
+    @Query("DELETE FROM habit_periods") suspend fun deleteAllPeriods()
+    @Query("DELETE FROM habits") suspend fun deleteAllHabits()
+    @Query("DELETE FROM sync_outbox") suspend fun clearOutbox()
+    @Query("DELETE FROM sync_meta") suspend fun clearMeta()
+
+    @Query("SELECT * FROM completions WHERE habit_id = :habitId AND date = :date")
+    suspend fun completion(habitId: String, date: LocalDate): CompletionEntity?
+}

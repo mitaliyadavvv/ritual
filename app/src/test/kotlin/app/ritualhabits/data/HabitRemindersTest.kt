@@ -273,7 +273,7 @@ class ReminderMigrationTest {
         helper.runMigrationsAndValidate(name, 2, true, RitualDatabase.MIGRATION_1_2).close()
 
         val db = Room.databaseBuilder(ApplicationProvider.getApplicationContext<Context>(), RitualDatabase::class.java, name)
-            .addMigrations(RitualDatabase.MIGRATION_1_2)
+            .addMigrations(RitualDatabase.MIGRATION_1_2, RitualDatabase.MIGRATION_2_3)
             .build()
         try {
             val all = db.habitDao().observeAll().first()
