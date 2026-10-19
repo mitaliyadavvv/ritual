@@ -1,4 +1,5 @@
 import groovy.json.JsonSlurper
+import java.util.Properties
 
 plugins {
     alias(libs.plugins.android.application)
@@ -52,6 +53,25 @@ val firebaseConfig = if (emulatorHost.isNotEmpty()) {
 }
 fun quoted(value: String?) = "\"" + value.orEmpty() + "\""
 
+/**
+ * Release (upload key) signing, from the git-ignored keystore.properties at the project root:
+ * storeFile + keyAlias, and keychainService naming the macOS Keychain item that holds the password
+ * (or set RITUAL_UPLOAD_PASSWORD). Nothing secret lives in the repository. Without the file, release
+ * builds are simply unsigned, as before.
+ */
+val uploadSigning = rootProject.file("keystore.properties").takeIf { it.exists() }?.let { file ->
+    val props = Properties().apply { file.inputStream().use(::load) }
+    val password = System.getenv("RITUAL_UPLOAD_PASSWORD")?.takeIf { it.isNotEmpty() }
+        ?: props.getProperty("keychainService")?.let { service ->
+            runCatching {
+                providers.exec { commandLine("security", "find-generic-password", "-s", service, "-w") }
+                    .standardOutput.asText.get().trim()
+            }.getOrNull()
+        }
+    val store = props.getProperty("storeFile")?.let(::file)?.takeIf { it.exists() }
+    if (store != null && password != null) Triple(store, props.getProperty("keyAlias") ?: "upload", password) else null
+}
+
 android {
     namespace = "app.ritualhabits"
     compileSdk = 36
@@ -70,12 +90,27 @@ android {
         buildConfigField("String", "FIREBASE_EMULATOR_HOST", quoted(emulatorHost))
     }
 
+    signingConfigs {
+        if (uploadSigning != null) {
+            create("upload") {
+                storeFile = uploadSigning.first
+                keyAlias = uploadSigning.second
+                storePassword = uploadSigning.third
+                keyPassword = uploadSigning.third
+            }
+        }
+    }
+
     buildTypes {
         debug {
             if (appIdSuffix.isNotEmpty()) applicationIdSuffix = appIdSuffix
         }
         release {
-            // R8 + signing are configured in Stage 6.
+            // Signed with the upload key when keystore.properties is present (Play re-signs with
+            // the app signing key). R8 shrinking stays off for the first release.
+            signingConfigs.findByName("upload")?.let { signingConfig = it }
+            // Local testing only (-Pritual.appIdSuffix): install beside the real app.
+            if (appIdSuffix.isNotEmpty()) applicationIdSuffix = appIdSuffix
             isMinifyEnabled = false
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
         }
