@@ -102,6 +102,22 @@ class SyncManager(
         scope.launch { auth?.signOut() }
     }
 
+    /**
+     * Deletes the signed-in account and its cloud backup after confirming the user again with a
+     * fresh Google sign-in ([idToken]). Throws [SignInException] (e.g. offline, wrong account).
+     */
+    suspend fun deleteAccount(idToken: String) {
+        val auth = checkNotNull(auth)
+        val user = (state.value as? AccountState.SignedIn)?.user ?: throw SignInException(SignInFailure.OTHER)
+        auth.reauthenticateWithGoogle(idToken)
+        try {
+            engine.deleteAccount(user.uid) { auth.deleteCurrentUser() }
+        } catch (e: CloudUnavailableException) {
+            throw SignInException(SignInFailure.NETWORK, e)
+        }
+        _state.value = AccountState.SignedOut(previousEmail = null)
+    }
+
     fun syncNow() {
         requests?.trySend(Unit)
     }

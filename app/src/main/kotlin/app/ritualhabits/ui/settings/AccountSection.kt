@@ -45,10 +45,12 @@ fun AccountSection(
     onSyncNow: () -> Unit,
     onChooseAccount: (Boolean) -> Unit,
     activityContext: Context,
+    onDeleteAccount: (Context) -> Unit = {},
 ) {
     val account = state.account
     if (account == AccountState.Unavailable) return
     var confirmSignOut by rememberSaveable { mutableStateOf(false) }
+    var confirmDelete by rememberSaveable { mutableStateOf(false) }
 
     SectionLabel("Account")
     Module(contentPadding = PaddingValues(horizontal = Spacing.lg)) {
@@ -99,7 +101,18 @@ fun AccountSection(
                 Hairline()
                 ListRow(
                     title = "Sign out",
-                    modifier = Modifier.clickable(role = Role.Button) { confirmSignOut = true },
+                    modifier = Modifier.clickable(role = Role.Button, enabled = !state.deleting) { confirmSignOut = true },
+                )
+                Hairline()
+                ListRow(
+                    title = if (state.deleting) "Deleting account…" else "Delete account",
+                    supporting = "Permanently delete your account and its backup.",
+                    modifier = Modifier.clickable(role = Role.Button, enabled = !state.deleting) { confirmDelete = true },
+                    trailing = if (state.deleting) {
+                        { CircularProgressIndicator(color = Ritual.colors.textSecondary, strokeWidth = 2.dp, modifier = Modifier.size(18.dp)) }
+                    } else {
+                        null
+                    },
                 )
             }
         }
@@ -120,6 +133,20 @@ fun AccountSection(
     Spacer(Modifier.height(Spacing.xxl))
 
     if (account is AccountState.ChooseAccount) AccountSwitchDialog(account, onChooseAccount)
+    if (confirmDelete && account is AccountState.SignedIn) {
+        ConfirmDialog(
+            title = "Delete your account?",
+            body = "This permanently deletes your Ritual account and everything backed up to it: habits, history, " +
+                "reminders and settings. The habits on this phone stay here and keep working offline. " +
+                "You'll be asked to choose your Google account to confirm. This can't be undone.",
+            confirmLabel = "Delete account",
+            onConfirm = {
+                confirmDelete = false
+                onDeleteAccount(activityContext)
+            },
+            onDismiss = { confirmDelete = false },
+        )
+    }
     if (confirmSignOut && account is AccountState.SignedIn) {
         val pending = account.sync.pending
         val note = when (pending) {

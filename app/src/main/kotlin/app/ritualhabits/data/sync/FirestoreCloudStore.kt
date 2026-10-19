@@ -18,6 +18,7 @@ import java.util.Date
  * - users/{uid}/habits/{habitId}
  * - users/{uid}/completions/{habitId}_{yyyy-MM-dd}
  * - users/{uid}/settings/preferences
+ * Deleting an account removes all three collections ([deleteAll]).
  * Reads always go to the server ([Source.SERVER]); the local database is the offline copy.
  */
 class FirestoreCloudStore(private val firestore: FirebaseFirestore) : CloudStore {
@@ -60,6 +61,19 @@ class FirestoreCloudStore(private val firestore: FirebaseFirestore) : CloudStore
             "serverUpdatedAt" to FieldValue.serverTimestamp(),
         )
         call { user(uid).collection("settings").document("preferences").set(data).await() }
+    }
+
+    override suspend fun deleteAll(uid: String) {
+        for (name in listOf("habits", "completions", "settings")) {
+            val collection = user(uid).collection(name)
+            while (true) {
+                val snapshot = call { collection.limit(BATCH_LIMIT.toLong()).get(Source.SERVER).await() }
+                if (snapshot.isEmpty) break
+                val batch = firestore.batch()
+                snapshot.documents.forEach { batch.delete(it.reference) }
+                call { batch.commit().await() }
+            }
+        }
     }
 
     private suspend fun <T> page(collection: CollectionReference, since: Long?, parse: (DocumentSnapshot) -> T?): CloudPage<T> {

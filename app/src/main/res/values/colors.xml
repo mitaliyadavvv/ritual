@@ -1,4 +1,7 @@
 <resources>
     <!-- Mirrors RitualColors.background (light). -->
     <color name="window_background">#FFF4F4F4</color>
+    <!-- App icon background (adaptive icon) and the splash mark's ink. -->
+    <color name="ic_launcher_background">#FFFFFFFF</color>
+    <color name="splash_mark">#FF111111</color>
 </resources>

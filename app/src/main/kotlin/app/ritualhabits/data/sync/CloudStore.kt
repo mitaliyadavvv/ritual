@@ -53,6 +53,8 @@ interface CloudStore {
     suspend fun write(uid: String, habits: List<CloudHabit>, completions: List<CloudCompletion>)
     suspend fun preferences(uid: String): CloudPreferences?
     suspend fun writePreferences(uid: String, preferences: CloudPreferences)
+    /** Account deletion: removes every record stored for [uid]. Safe to repeat. */
+    suspend fun deleteAll(uid: String)
 }
 
 /** Couldn't reach the backend (offline, timeout). Changes stay queued and are retried. */
@@ -65,4 +67,5 @@ object UnavailableCloudStore : CloudStore {
     override suspend fun write(uid: String, habits: List<CloudHabit>, completions: List<CloudCompletion>) = throw CloudUnavailableException()
     override suspend fun preferences(uid: String): CloudPreferences? = throw CloudUnavailableException()
     override suspend fun writePreferences(uid: String, preferences: CloudPreferences) = throw CloudUnavailableException()
+    override suspend fun deleteAll(uid: String) = throw CloudUnavailableException()
 }

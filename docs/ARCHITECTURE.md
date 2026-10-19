@@ -366,6 +366,11 @@ hidden, and the app behaves exactly as before. Setup steps: `docs/CLOUD_SETUP.md
 - **When it runs (`SyncManager`):** on sign-in, 2 s after local changes, on app foreground, when the
   network returns, and on "Back up now"; failures retry after 15 s, 1 min, then every 5 min while the
   app is running. Status (backing up / offline with N waiting / last backed up) shows in Settings.
+- **Account deletion:** Settings → Account → Delete account. After confirming, the user picks their
+  Google account again (Firebase requires a recent sign-in), then every cloud record under
+  `users/{uid}` is deleted, then the Firebase Auth user, all while holding the sync lock so nothing
+  re-uploads. The phone's habits stay, unlinked (local-only). Web request page for Google Play:
+  `docs/play/delete-account.html`.
 - **Not synced:** focus-session timer records (device-local; completions they produced do sync), the
   notification-permission flag, and the unused profile name.
 

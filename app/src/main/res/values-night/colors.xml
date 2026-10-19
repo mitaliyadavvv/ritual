@@ -1,4 +1,6 @@
 <resources>
     <!-- Mirrors RitualColors.background (dark). -->
     <color name="window_background">#FF000000</color>
+    <!-- Splash mark in light ink on the dark window background. -->
+    <color name="splash_mark">#FFF2F2F2</color>
 </resources>

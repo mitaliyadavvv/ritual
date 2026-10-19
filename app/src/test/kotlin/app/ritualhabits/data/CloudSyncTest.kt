@@ -106,6 +106,11 @@ class FakeCloud : CloudStore {
         checkOnline()
         account(uid).preferences = preferences
     }
+
+    override suspend fun deleteAll(uid: String) {
+        checkOnline()
+        accounts.remove(uid)
+    }
 }
 
 /** One installation of the app: its own database, settings file and clock. */
@@ -396,6 +401,51 @@ class CloudSyncTest {
         b.engine.sync("alice")
         a.engine.sync("alice")
         assertEquals(ThemeMode.LIGHT, a.preferences.preferences.first().themeMode)
+    }
+
+    @Test fun `deleting the account removes its backup only, keeps the phone's habits, and unlinks them`() = runBlocking<Unit> {
+        val bob = device().apply { create("Bob's habit") }
+        bob.engine.attach("bob", null)
+        bob.engine.sync("bob")
+
+        val phone = device()
+        val id = phone.create("Read")
+        phone.completions.toggle(id, phone.clock.today())
+        phone.preferences.setThemeMode(ThemeMode.DARK)
+        phone.engine.attach("alice", "alice@example.com")
+        phone.engine.sync("alice")
+        phone.create("Not yet backed up")
+        var remoteDeleted = false
+
+        phone.engine.deleteAccount("alice") { remoteDeleted = true }
+
+        assertTrue(remoteDeleted)
+        assertFalse("alice" in cloud.accounts)
+        assertEquals(listOf("Bob's habit"), cloud.account("bob").habits.values.map { it.name })
+        assertEquals(listOf("Not yet backed up", "Read"), phone.names())
+        assertEquals(1, phone.doneKeys().size)
+        assertNull(phone.engine.ownerUid())
+        assertNull(phone.engine.ownerEmail())
+        assertTrue(phone.outbox().isEmpty())
+        // Unlinked: further changes aren't queued for any account.
+        phone.create("After deletion")
+        assertTrue(phone.outbox().isEmpty())
+        // Signing in again later starts a fresh backup from what's on the phone.
+        assertEquals(Attach.Claimed, phone.engine.attach("alice", "alice@example.com"))
+    }
+
+    @Test fun `account deletion offline changes nothing`() = runBlocking<Unit> {
+        val phone = device()
+        phone.create("Read")
+        phone.engine.attach("alice", null)
+        phone.engine.sync("alice")
+        cloud.online = false
+        var remoteDeleted = false
+        assertFailsWith<CloudUnavailableException> { phone.engine.deleteAccount("alice") { remoteDeleted = true } }
+        assertFalse(remoteDeleted)
+        cloud.online = true
+        assertEquals(listOf("Read"), cloud.account("alice").habits.values.map { it.name })
+        assertEquals("alice", phone.engine.ownerUid())
     }
 
     @Test fun `a completion that arrives before its habit is fetched again next time`() = runBlocking<Unit> {

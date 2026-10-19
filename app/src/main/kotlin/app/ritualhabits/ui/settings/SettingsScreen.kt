@@ -65,6 +65,7 @@ fun SettingsRoute(
                 onSyncNow = accountViewModel::syncNow,
                 onChooseAccount = accountViewModel::chooseAccount,
                 activityContext = context,
+                onDeleteAccount = accountViewModel::deleteAccount,
             )
         },
     )

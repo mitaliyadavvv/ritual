@@ -6,6 +6,7 @@
 
     <style name="Theme.Ritual.Splash" parent="Theme.SplashScreen">
         <item name="windowSplashScreenBackground">@color/window_background</item>
+        <item name="windowSplashScreenAnimatedIcon">@drawable/ic_splash_mark</item>
         <item name="postSplashScreenTheme">@style/Theme.Ritual</item>
     </style>
 </resources>

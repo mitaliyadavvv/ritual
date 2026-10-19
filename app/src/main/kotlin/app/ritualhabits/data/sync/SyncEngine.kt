@@ -102,6 +102,23 @@ class SyncEngine(
         preferences.resetSyncedPreferencesClock()
     }
 
+    /**
+     * Account deletion: removes every cloud record for [uid], then the account itself
+     * ([deleteRemoteAccount]), then unlinks this phone. Habits on the phone stay, local-only. Holds
+     * the sync lock throughout, so nothing can be uploaded again midway. If a step fails, the later
+     * steps don't run and retrying is safe.
+     */
+    suspend fun deleteAccount(uid: String, deleteRemoteAccount: suspend () -> Unit) = mutex.withLock {
+        check(dao.meta(SyncTriggers.META_OWNER_UID) == uid) { "Local data belongs to another account" }
+        cloud.deleteAll(uid)
+        deleteRemoteAccount()
+        db.withTransaction {
+            dao.clearOutbox()
+            dao.clearMeta()
+        }
+        preferences.resetSyncedPreferencesClock()
+    }
+
     /** One full round: download, merge, upload. Throws [CloudUnavailableException] when offline. */
     suspend fun sync(uid: String) = mutex.withLock {
         check(dao.meta(SyncTriggers.META_OWNER_UID) == uid) { "Local data belongs to another account" }

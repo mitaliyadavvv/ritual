@@ -59,6 +59,19 @@ class FakeAuth : AuthGateway {
     override suspend fun signOut() {
         user.value = null
     }
+
+    var reauthFailure: SignInFailure? = null
+    var deleted = mutableListOf<String>()
+
+    override suspend fun reauthenticateWithGoogle(idToken: String) {
+        reauthFailure?.let { throw SignInException(it) }
+        if ("$idToken-uid" != user.value?.uid) throw SignInException(SignInFailure.WRONG_ACCOUNT)
+    }
+
+    override suspend fun deleteCurrentUser() {
+        user.value?.uid?.let(deleted::add)
+        user.value = null
+    }
 }
 
 @OptIn(ExperimentalCoroutinesApi::class)
@@ -178,6 +191,39 @@ class AccountSyncTest {
         val signedIn = withTimeout(5_000) { vm.uiState.first { it.account is AccountState.SignedIn } }
         assertNull(signedIn.message)
         assertIs<AccountState.SignedIn>(signedIn.account)
+    }
+
+    @Test fun `delete account from the view model, with wrong-account and cancel handled`() = runBlocking<Unit> {
+        val context = ApplicationProvider.getApplicationContext<Context>()
+        phone.create("Read")
+        manager.signInWithGoogle("alice")
+        awaitSynced()
+        var next: GoogleCredentialResult = GoogleCredentialResult.Cancelled
+        val vm = AccountViewModel(manager) { next }
+
+        vm.deleteAccount(context) // cancelled at the Google picker
+        withTimeout(5_000) { vm.uiState.first { !it.deleting } }
+        assertIs<AccountState.SignedIn>(manager.state.value)
+        assertTrue(auth.deleted.isEmpty())
+
+        next = GoogleCredentialResult.Token("bob") // someone else's account
+        vm.deleteAccount(context)
+        assertEquals(
+            "Choose the Google account you're signed in with to delete it.",
+            withTimeout(5_000) { vm.uiState.first { it.message != null } }.message,
+        )
+        assertEquals(listOf("Read"), cloud.account("alice-uid").habits.values.map { it.name })
+
+        next = GoogleCredentialResult.Token("alice")
+        vm.deleteAccount(context)
+        assertEquals(
+            "Your account and its backup were deleted. Your habits are still on this phone.",
+            withTimeout(5_000) { vm.uiState.first { it.message?.startsWith("Your account") == true } }.message,
+        )
+        assertEquals(listOf("alice-uid"), auth.deleted)
+        assertTrue("alice-uid" !in cloud.accounts)
+        assertEquals(AccountState.SignedOut(null), awaitState { it is AccountState.SignedOut })
+        assertEquals(listOf("Read"), phone.names())
     }
 
     @Test fun `status and data copy`() {

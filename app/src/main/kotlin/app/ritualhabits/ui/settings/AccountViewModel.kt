@@ -28,6 +28,8 @@ import kotlin.time.Duration.Companion.minutes
 data class AccountUiState(
     val account: AccountState = AccountState.Loading,
     val signingIn: Boolean = false,
+    /** Account deletion in progress. */
+    val deleting: Boolean = false,
     /** Why the last sign-in didn't work; null after cancel or success. */
     val message: String? = null,
 )
@@ -60,6 +62,33 @@ class AccountViewModel(
                 }
             }
             local.value = AccountUiState(signingIn = false, message = message)
+        }
+    }
+
+    /**
+     * "Delete account", after the user confirmed. Google asks them to pick their account again (a
+     * fresh sign-in is required to delete one); cancelling there changes nothing.
+     */
+    fun deleteAccount(activityContext: Context) {
+        val source = credentials ?: return
+        if (local.value.deleting || local.value.signingIn) return
+        local.value = AccountUiState(deleting = true)
+        viewModelScope.launch {
+            val message = when (val result = source.request(activityContext)) {
+                GoogleCredentialResult.Cancelled -> null
+                GoogleCredentialResult.NoAccount, is GoogleCredentialResult.Failed -> "Couldn't confirm your Google account. Your account wasn't deleted."
+                is GoogleCredentialResult.Token -> try {
+                    sync.deleteAccount(result.idToken)
+                    "Your account and its backup were deleted. Your habits are still on this phone."
+                } catch (e: SignInException) {
+                    when (e.failure) {
+                        SignInFailure.NETWORK -> "You're offline. Connect to the internet and try again. Your account wasn't deleted."
+                        SignInFailure.WRONG_ACCOUNT -> "Choose the Google account you're signed in with to delete it."
+                        SignInFailure.OTHER -> "Couldn't delete your account. Please try again."
+                    }
+                }
+            }
+            local.value = AccountUiState(deleting = false, message = message)
         }
     }
 
